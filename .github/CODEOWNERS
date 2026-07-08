@@ -1,0 +1,13 @@
+# CODEOWNERS
+# This file defines the owners of different parts of the mono-repo.
+# These owners will be automatically requested for review when a Pull Request modifies their files.
+
+# Global owners (default review requests for all files)
+*                       @global-owners
+
+# Component-specific owners
+/frontend/             @frontend-team
+/gateway/              @gateway-team
+/branch-backend/       @backend-team
+/infra/                @infra-team
+/docs/                 @docs-team
