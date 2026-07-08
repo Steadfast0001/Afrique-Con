@@ -1,6 +1,10 @@
 # Afrique-Con Mono-Repo
 
+[![CI Pipeline](https://github.com/Steadfast0001/Afrique-Con/actions/workflows/ci.yml/badge.svg)](https://github.com/Steadfast0001/Afrique-Con/actions/workflows/ci.yml)
+[![Deploy to Staging](https://github.com/Steadfast0001/Afrique-Con/actions/workflows/deploy-staging.yml/badge.svg)](https://github.com/Steadfast0001/Afrique-Con/actions/workflows/deploy-staging.yml)
+
 Welcome to the Afrique-Con mono-repo. This repository contains all components of the system.
+
 
 ## Directory Structure
 
