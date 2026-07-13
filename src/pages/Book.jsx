@@ -157,9 +157,8 @@ export default function Book() {
     
     pollingRef.current = setInterval(async () => {
       try {
-        const statusRes = await fetch(`/api/campay/transaction/${ref}/`, {
+        const statusRes = await fetch(`/api/campay-status?ref=${ref}`, {
           headers: {
-            'Authorization': 'Token 0c6d7a67bad9254d8c2c2cd34d2e8d669ce9618f',
             'Content-Type': 'application/json'
           }
         });
@@ -212,10 +211,9 @@ export default function Book() {
         }
 
         // Call proxy collect endpoint
-        const collectRes = await fetch('/api/campay/collect/', {
+        const collectRes = await fetch('/api/campay-collect', {
           method: 'POST',
           headers: {
-            'Authorization': 'Token 0c6d7a67bad9254d8c2c2cd34d2e8d669ce9618f',
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
