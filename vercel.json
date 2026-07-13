@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/campay/:path*",
+      "destination": "https://demo.campay.net/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
