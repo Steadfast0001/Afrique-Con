@@ -166,7 +166,14 @@ export default function Book() {
 
         if (!statusRes.ok) return;
 
-        const statusData = await statusRes.json();
+        const responseText = await statusRes.text();
+        let statusData;
+        try {
+          statusData = JSON.parse(responseText);
+        } catch {
+          return; // Ignore parsing errors during polling
+        }
+
         if (statusData.status === 'SUCCESSFUL') {
           clearInterval(pollingRef.current);
           setCampayStatus('success');
@@ -220,7 +227,14 @@ export default function Book() {
           })
         });
 
-        const collectData = await collectRes.json();
+        const responseText = await collectRes.text();
+        let collectData;
+        try {
+          collectData = JSON.parse(responseText);
+        } catch {
+          throw new Error(`Server returned non-JSON response (Status ${collectRes.status}): ${responseText.slice(0, 100) || '[Empty Response]'}`);
+        }
+
         if (!collectRes.ok) {
           throw new Error(collectData.message || JSON.stringify(collectData));
         }
