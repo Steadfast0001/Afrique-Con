@@ -1,0 +1,38 @@
+:root {
+  --brand-red-dark: #B90D0D;
+  --brand-red-bright: #FF0D0D;
+  --charcoal-black: #222222;
+  --white: #FFFFFF;
+  --dark-gray: #4A4A4A;
+  --medium-gray: #7A7A7A;
+  --light-gray: #E6E6E6;
+  --very-light-gray: #F5F5F5;
+  --off-white: #FFF3E0;
+  --success-green: #28A745;
+  --warning-orange: #FF9800;
+  --info-blue: #0D6EFD;
+  --error-red: #DC3545;
+
+  --background: var(--off-white);
+  --surface: var(--white);
+  --text: var(--charcoal-black);
+  --muted: var(--medium-gray);
+}
+
+body {
+  font-family: Inter, system-ui, Arial, sans-serif;
+  background: var(--background);
+  color: var(--text);
+  margin: 0;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}

@@ -1,0 +1,60 @@
+name: Frontend CI
+
+on:
+  push:
+    paths:
+      - 'frontend/**'
+  pull_request:
+    paths:
+      - 'frontend/**'
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    services: {}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install gateway (auth) requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r gateway/requirements.txt
+
+      - name: Start auth service
+        run: |
+          export PYTHONPATH=${{ github.workspace }}
+          nohup python -m uvicorn gateway.auth:app --host 0.0.0.0 --port 8001 &
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install frontend deps
+        working-directory: frontend
+        run: npm install --legacy-peer-deps --no-audit --no-fund
+
+      - name: Build frontend with API base
+        working-directory: frontend
+        env:
+          VITE_API_BASE: 'http://localhost:8001'
+        run: npm run build
+
+      - name: Serve frontend preview
+        working-directory: frontend
+        run: nohup npm run preview -- --port 5173 &
+
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright E2E
+        working-directory: frontend
+        env:
+          FRONTEND_URL: 'http://localhost:5173'
+        run: npx playwright test --reporter=dot

@@ -1,0 +1,26 @@
+version: "3.9"
+
+services:
+  branch-backend:
+    build: .
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - branch-db
+
+  branch-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${BRANCH_DB_USER:-branch_user}
+      POSTGRES_PASSWORD: ${BRANCH_DB_PASSWORD:-secret}
+      POSTGRES_DB: ${BRANCH_DB_NAME:-branch_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - branch-db-data:/var/lib/postgresql/data
+
+volumes:
+  branch-db-data:

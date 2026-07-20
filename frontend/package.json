@@ -1,0 +1,29 @@
+{
+  "name": "afriquecon-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start:auth": "cd .. && python -m uvicorn gateway.auth:app --host 127.0.0.1 --port 8001",
+    "e2e:install": "npx playwright install --with-deps",
+    "e2e:setup": "npm run e2e:install",
+    "e2e:serve": "npx concurrently \"npm run start:auth\" \"npm run preview -- --port 5173\"",
+    "test:e2e": "npx playwright test",
+    "preview:serve": "vite preview --port 5173"
+  },
+  "postinstall": "npx playwright install --with-deps || true",
+  "dependencies": {
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-router-dom": "6.14.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "@vitejs/plugin-react": "^4.0.0",
+    "concurrently": "^8.2.2",
+    "playwright": "^1.61.1",
+    "vite": "5.0.0"
+  }
+}
