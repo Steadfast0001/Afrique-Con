@@ -9,9 +9,9 @@ services:
     container_name: postgres_buea_staging
     restart: always
     environment:
-      POSTGRES_USER: ${BUEA_DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${BUEA_DB_PASSWORD:-postgres_buea_secure_pwd}
-      POSTGRES_DB: ${BUEA_DB_NAME:-buea_db}
+      POSTGRES_USER: ${BUEA_DB_USER:-buea_db_admin}
+      POSTGRES_PASSWORD: ${BUEA_DB_PASSWORD:-slim.v.}
+      POSTGRES_DB: ${BUEA_DB_NAME:-buea_staging_db}
     volumes:
       - postgres_buea_data:/var/lib/postgresql/data
     networks:
@@ -22,15 +22,16 @@ services:
     container_name: pgbouncer_buea_staging
     restart: always
     environment:
-      - DB_USER=${BUEA_DB_USER:-postgres}
-      - DB_PASSWORD=${BUEA_DB_PASSWORD:-postgres_buea_secure_pwd}
-      - DB_HOST=postgres_buea
+      - DB_USER=${BUEA_DB_USER:-buea_db_admin}
+      - DB_PASSWORD=${BUEA_DB_PASSWORD:-slim.v.}
+      - DB_HOST=localhost
       - DB_PORT=5432
-      - DB_NAME=${BUEA_DB_NAME:-buea_db}
+      - DB_NAME=${BUEA_DB_NAME:-buea_staging_db}
       - POOL_MODE=transaction
       - MAX_CLIENT_CONN=100
       - DEFAULT_POOL_SIZE=20
       - LISTEN_PORT=5432
+      - AUTH_TYPE=any
     ports:
       - "5433:5432" # Accessible externally via port 5433
     depends_on:
@@ -47,9 +48,9 @@ services:
     container_name: postgres_douala_staging
     restart: always
     environment:
-      POSTGRES_USER: ${DOUALA_DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DOUALA_DB_PASSWORD:-postgres_douala_secure_pwd}
-      POSTGRES_DB: ${DOUALA_DB_NAME:-douala_db}
+      POSTGRES_USER: ${DOUALA_DB_USER:-douala_db_admin}
+      POSTGRES_PASSWORD: ${DOUALA_DB_PASSWORD:-slim.v.}
+      POSTGRES_DB: ${DOUALA_DB_NAME:-douala_staging_db}
     volumes:
       - postgres_douala_data:/var/lib/postgresql/data
     networks:
@@ -60,15 +61,16 @@ services:
     container_name: pgbouncer_douala_staging
     restart: always
     environment:
-      - DB_USER=${DOUALA_DB_USER:-postgres}
-      - DB_PASSWORD=${DOUALA_DB_PASSWORD:-postgres_douala_secure_pwd}
-      - DB_HOST=postgres_douala
+      - DB_USER=${DOUALA_DB_USER:-douala_db_admin}
+      - DB_PASSWORD=${DOUALA_DB_PASSWORD:-slim.v.}
+      - DB_HOST=localhost
       - DB_PORT=5432
-      - DB_NAME=${DOUALA_DB_NAME:-douala_db}
+      - DB_NAME=${DOUALA_DB_NAME:-douala_staging_db}
       - POOL_MODE=transaction
       - MAX_CLIENT_CONN=100
       - DEFAULT_POOL_SIZE=20
       - LISTEN_PORT=5432
+      - AUTH_TYPE=any
     ports:
       - "5434:5432" # Accessible externally via port 5434
     depends_on:
@@ -77,12 +79,29 @@ services:
       - douala_internal
       - public_net
 
+  # =========================================================================
+  # REDIS STAGING CLUSTER (EMULATION)
+  # =========================================================================
+  redis_staging:
+    image: redis:7-alpine
+    container_name: redis_staging
+    restart: always
+    command: redis-server /usr/local/etc/redis/redis.conf --requirepass ${REDIS_PASSWORD:-redis_secure_staging_pwd}
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+      - redis_staging_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - public_net
+
 # =========================================================================
 # VOLUMES & NETWORKS
 # =========================================================================
 volumes:
   postgres_buea_data:
   postgres_douala_data:
+  redis_staging_data:
 
 networks:
   # Private networks to isolate direct Postgres DB nodes
