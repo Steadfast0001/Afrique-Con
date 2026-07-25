@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Search() {
   const { routes, schedules, buses, bookings } = useApp();
+  const { t, language } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -47,6 +49,18 @@ export default function Search() {
 
   const results = getResults();
 
+  const getResultsSubText = () => {
+    const tripText = results.length === 1 
+      ? (language === 'fr' ? 'trajet trouvé' : language === 'pcm' ? 'waka found' : 'trip found')
+      : (language === 'fr' ? 'trajets trouvés' : language === 'pcm' ? 'waka dem found' : 'trips found');
+    
+    const prefix = from && to 
+      ? `${from} → ${to} · ` 
+      : `${t('search.allDates')} · `;
+      
+    return `${prefix}${results.length} ${tripText}`;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
 
@@ -60,11 +74,11 @@ export default function Search() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                 </svg>
-                From
+                {t('search.from')}
               </label>
               <select value={modFrom} onChange={e => setModFrom(e.target.value)}
                 className="w-full bg-gray-50 border border-gray-200 text-gray-800 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 appearance-none cursor-pointer">
-                <option value="">Any city</option>
+                <option value="">{t('search.anyCity')}</option>
                 {uniqueOrigins.map(o => <option key={o} value={o}>{o}</option>)}
               </select>
             </div>
@@ -74,11 +88,11 @@ export default function Search() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                 </svg>
-                To
+                {t('search.to')}
               </label>
               <select value={modTo} onChange={e => setModTo(e.target.value)}
                 className="w-full bg-gray-50 border border-gray-200 text-gray-800 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 appearance-none cursor-pointer">
-                <option value="">Any city</option>
+                <option value="">{t('search.anyCity')}</option>
                 {uniqueDestinations.map(d => <option key={d} value={d}>{d}</option>)}
               </select>
             </div>
@@ -87,7 +101,7 @@ export default function Search() {
                 <svg className="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                 </svg>
-                Date
+                {t('search.date')}
               </label>
               <input type="date" value={modDate} onChange={e => setModDate(e.target.value)}
                 className="w-full bg-gray-50 border border-gray-200 text-gray-800 px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"/>
@@ -97,7 +111,7 @@ export default function Search() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
               </svg>
-              Search
+              {t('search.searchBtn')}
             </button>
           </form>
         </div>
@@ -106,16 +120,16 @@ export default function Search() {
       {/* ===== RESULTS ===== */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">All Available Trips</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t('search.title')}</h2>
           <p className="text-gray-400 text-sm mt-1">
-            {from && to ? `${from} → ${to} · ` : 'All dates · '}{results.length} trip{results.length !== 1 ? 's' : ''} found
+            {getResultsSubText()}
           </p>
         </div>
 
         {results.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-200 py-20 text-center">
-            <p className="text-gray-500 text-base">No trips found for this route.</p>
-            <p className="text-gray-400 text-sm mt-1">Try different cities or leave the date blank.</p>
+            <p className="text-gray-500 text-base">{t('search.noTrips')}</p>
+            <p className="text-gray-400 text-sm mt-1">{t('search.noTripsSub')}</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -136,7 +150,7 @@ export default function Search() {
                         </span>
                         {trip.route?.type === 'Cross-Border' && (
                           <span className="bg-green-50 text-green-700 text-xs font-semibold px-2.5 py-0.5 rounded-full border border-green-200">
-                            Cross-Border
+                            {t('search.crossBorder')}
                           </span>
                         )}
                       </div>
@@ -151,7 +165,7 @@ export default function Search() {
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
                           </svg>
-                          {trip.seatsLeft} seats left
+                          {trip.seatsLeft} {t('search.seatsLeft')}
                         </span>
                         <span className="text-gray-400">{trip.bus?.name}</span>
                       </div>
@@ -182,7 +196,7 @@ export default function Search() {
                         : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                     }`}
                   >
-                    Select Seats
+                    {t('book.step1')}
                     {trip.seatsLeft > 0 && (
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3"/>

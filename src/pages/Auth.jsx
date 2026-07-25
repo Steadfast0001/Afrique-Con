@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { useLanguage } from '../context/LanguageContext';
 import { LogIn, UserPlus, Mail, Lock, KeyRound } from 'lucide-react';
 
 export default function Auth({ mode = 'login' }) {
   const { loginUser, registerUser } = useApp();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
@@ -32,25 +34,25 @@ export default function Auth({ mode = 'login' }) {
         setError(res.message);
       }
     } else if (mode === 'register') {
-      if (formData.password.length < 6) return setError('Password must be at least 6 characters.');
-      if (formData.password !== formData.confirmPassword) return setError('Passwords do not match.');
+      if (formData.password.length < 6) return setError(t('auth.passwordLengthErr'));
+      if (formData.password !== formData.confirmPassword) return setError(t('auth.passwordMatchErr'));
       const derivedName = formData.email.split('@')[0].replace(/[^a-zA-Z]/g, ' ');
       const capitalizedName = derivedName.charAt(0).toUpperCase() + derivedName.slice(1);
       const res = await registerUser(capitalizedName, formData.email, formData.password);
       if (res.success) {
-        setSuccess('Registration successful! Please check your email to verify or log in.');
+        setSuccess(language === 'fr' ? 'Inscription réussie ! Veuillez vérifier vos e-mails ou vous connecter.' : language === 'pcm' ? 'You done join us! Enter inside now.' : 'Registration successful! Please check your email to verify or log in.');
         navigate('/login');
       } else {
         setError(res.message);
       }
     } else if (mode === 'forgot') {
-      if (!formData.email.trim()) return setError('Please enter your email.');
+      if (!formData.email.trim()) return setError(language === 'fr' ? 'Veuillez entrer votre adresse e-mail.' : language === 'pcm' ? 'Write your email first.' : 'Please enter your email.');
       const { supabase } = await import('../context/supabaseClient');
       const { error } = await supabase.auth.resetPasswordForEmail(formData.email);
       if (error) {
         setError(error.message);
       } else {
-        setSuccess('If an account exists, a reset link will be sent to your email.');
+        setSuccess(t('auth.resetSent'));
       }
     }
   };
@@ -64,7 +66,7 @@ export default function Auth({ mode = 'login' }) {
 
         {/* Top Icon and Heading */}
         <div className="text-center mb-6">
-          <div className="w-12 h-12 bg-amber-600 rounded-xl flex items-center justify-center text-white mx-auto mb-4 shadow-sm">
+          <div className="w-12 h-12 bg-amber-650 rounded-xl flex items-center justify-center text-white mx-auto mb-4 shadow-sm">
             {mode === 'login' ? (
               <LogIn className="w-6 h-6" />
             ) : mode === 'register' ? (
@@ -74,12 +76,12 @@ export default function Auth({ mode = 'login' }) {
             )}
           </div>
           <h1 className="text-3xl font-extrabold text-gray-950 tracking-tight leading-tight">
-            {mode === 'login' ? 'Welcome back' : mode === 'register' ? 'Create your account' : 'Reset password'}
+            {mode === 'login' ? t('auth.welcomeBack') : mode === 'register' ? t('auth.createAccount') : t('auth.resetPassword')}
           </h1>
           <p className="text-gray-450 text-sm mt-1">
-            {mode === 'login' ? 'Log in to your account'
-              : mode === 'register' ? 'Sign up to get started'
-              : 'Enter your email to receive a reset link'}
+            {mode === 'login' ? t('auth.logInSub')
+              : mode === 'register' ? t('auth.signUpSub')
+              : t('auth.resetSub')}
           </p>
         </div>
 
@@ -111,7 +113,7 @@ export default function Auth({ mode = 'login' }) {
                 d="M12 23c3.24 0 5.97-1.07 7.96-2.91l-3.7-2.87c-1.03.69-2.35 1.11-4.26 1.11-3.06 0-5.7-2.76-6.63-5.46l-3.87 3C3.4 20.35 7.35 23 12 23z"
               />
             </svg>
-            <span>Continue with Google</span>
+            <span>{t('auth.googleBtn')}</span>
           </button>
 
           {/* Divider */}
@@ -119,7 +121,7 @@ export default function Auth({ mode = 'login' }) {
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-150"></div>
             </div>
-            <span className="relative px-3 bg-white text-[10px] text-gray-400 font-bold uppercase tracking-widest">OR</span>
+            <span className="relative px-3 bg-white text-[10px] text-gray-400 font-bold uppercase tracking-widest">{t('auth.or')}</span>
           </div>
 
 
@@ -137,7 +139,7 @@ export default function Auth({ mode = 'login' }) {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email Field */}
             <div>
-              <label className={labelClass}>Email</label>
+              <label className={labelClass}>{t('auth.email')}</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                   <Mail className="w-4 h-4" />
@@ -158,10 +160,10 @@ export default function Auth({ mode = 'login' }) {
             {mode !== 'forgot' && (
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-bold text-gray-700 m-0">Password</label>
+                  <label className="text-xs font-bold text-gray-700 m-0">{t('auth.password')}</label>
                   {mode === 'login' && (
                     <Link to="/forgot-password" className="text-amber-600 hover:text-amber-700 text-xs font-bold transition-colors">
-                      Forgot password?
+                      {t('auth.forgotPasswordLink')}
                     </Link>
                   )}
                 </div>
@@ -185,7 +187,7 @@ export default function Auth({ mode = 'login' }) {
             {/* Confirm Password Field */}
             {mode === 'register' && (
               <div>
-                <label className={labelClass}>Confirm Password</label>
+                <label className={labelClass}>{t('auth.confirmPassword')}</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                     <Lock className="w-4 h-4" />
@@ -205,9 +207,9 @@ export default function Auth({ mode = 'login' }) {
 
             <button
               type="submit"
-              className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 rounded-xl text-sm transition-all shadow-sm active:scale-97 mt-2"
+              className="w-full bg-amber-650 hover:bg-amber-600 text-white font-bold py-3 rounded-xl text-sm transition-all shadow-sm active:scale-97 mt-2"
             >
-              {mode === 'login' ? 'Log In' : mode === 'register' ? 'Create account' : 'Send Reset Link'}
+              {mode === 'login' ? t('auth.signInBtn') : mode === 'register' ? t('auth.registerBtn') : t('auth.resetBtn')}
             </button>
           </form>
 
@@ -217,13 +219,17 @@ export default function Auth({ mode = 'login' }) {
         <div className="mt-6 text-center text-sm text-gray-500">
           {mode === 'login' ? (
             <>
-              Don't have an account?{' '}
-              <Link to="/register" className="text-amber-600 hover:text-amber-700 font-bold transition-colors">Create one</Link>
+              {language === 'fr' ? "Vous n'avez pas de compte ? " : language === 'pcm' ? "You no get account? " : "Don't have an account? "}
+              <Link to="/register" className="text-amber-600 hover:text-amber-700 font-bold transition-colors">
+                {language === 'fr' ? "S'inscrire" : language === 'pcm' ? 'Join us' : 'Register'}
+              </Link>
             </>
           ) : (
             <>
-              Already have an account?{' '}
-              <Link to="/login" className="text-amber-600 hover:text-amber-700 font-bold transition-colors">Log in</Link>
+              {language === 'fr' ? 'Vous avez déjà un compte ? ' : language === 'pcm' ? 'You get account? ' : 'Already have an account? '}
+              <Link to="/login" className="text-amber-600 hover:text-amber-700 font-bold transition-colors">
+                {language === 'fr' ? 'Se connecter' : language === 'pcm' ? 'Log in' : 'Sign In'}
+              </Link>
             </>
           )}
         </div>

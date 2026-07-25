@@ -1,173 +1,157 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, X, Send, Bot } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { MessageSquare, X, Bot, Headphones, ChevronRight } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+
+const WHATSAPP_PHONE = '237686525944';
+const WHATSAPP_MESSAGE = 'Hello TransitFlow, I need assistance with my booking.';
+
+const WhatsAppIcon = (props) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.458L0 24zm6.59-11.771c.207-.586.277-1.016.084-1.348-.069-.117-.253-.188-.53-.328-.277-.14-1.637-.808-1.89-1.002-.253-.194-.437-.291-.621.01-.184.301-.713.899-.874 1.085-.162.186-.323.21-.6.07-.277-.14-1.171-.432-2.23-1.378-.824-.735-1.38-1.642-1.542-1.921-.162-.279-.017-.43.122-.569.124-.125.277-.323.415-.483.139-.161.185-.274.277-.456.093-.182.046-.341-.023-.482-.069-.14-.621-1.498-.85-2.05-.223-.538-.447-.465-.621-.474-.162-.008-.346-.009-.53-.009-.184 0-.484.069-.737.348-.253.279-.966.944-.966 2.303s.99 2.669 1.129 2.855c.138.186 1.948 2.974 4.72 4.169.659.283 1.174.453 1.576.58.662.21 1.264.18 1.74.109.53-.08 1.637-.669 1.868-1.317zm0 0" />
+  </svg>
+);
 
 export default function TransitBot() {
+  const { t, language } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      sender: 'bot',
-      text: 'Hello! I am TransitBot, your virtual assistant. How can I help you today?',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }
-  ]);
-  const [inputText, setInputText] = useState('');
   const [unread, setUnread] = useState(true);
-  const messageEndRef = useRef(null);
+  const [isTawkLoaded, setIsTawkLoaded] = useState(false);
 
-  const quickReplies = [
-    { text: 'How do I book a ticket?', reply: 'To book a ticket, go to the Home page, select your departure and arrival stations, choose a date, and click "Search Trips". Then select your seat, enter passenger details, and confirm simulated payment.' },
-    { text: 'What is the refund policy?', reply: 'You can cancel any "Pending" ticket from the "My Trips" page. Cancellations will immediately process a refund back to your mock wallet.' },
-    { text: 'How to contact support?', reply: 'If you have an issue, please log in and submit a support ticket in the Support Desk or contact us at +237 6 77 12 34 56.' },
-    { text: 'Check fleet status', reply: 'Our operations team keeps the fleet status updated! Standard VIP classes are currently active and running on scheduled domestic & cross-border routes.' }
-  ];
-
+  // Dynamic tawk.to Script loading
   useEffect(() => {
-    if (messageEndRef.current) {
-      messageEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages, isOpen]);
+    let script = document.getElementById('tawk-script');
+    
+    const initializeTawkAPI = () => {
+      window.Tawk_API = window.Tawk_API || {};
+      window.Tawk_API.onLoad = function () {
+        setIsTawkLoaded(true);
+        if (typeof window.Tawk_API.hideWidget === 'function') {
+          window.Tawk_API.hideWidget();
+        }
+      };
 
-  const handleSendMessage = (textToSend) => {
-    if (!textToSend.trim()) return;
+      window.Tawk_API.onChatMinimized = function () {
+        if (typeof window.Tawk_API.hideWidget === 'function') {
+          window.Tawk_API.hideWidget();
+        }
+      };
 
-    const userMsg = {
-      id: Date.now(),
-      sender: 'user',
-      text: textToSend,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      // Check if it's already loaded in the window instance
+      if (window.Tawk_API && typeof window.Tawk_API.hideWidget === 'function') {
+        setIsTawkLoaded(true);
+        window.Tawk_API.hideWidget();
+      }
     };
 
-    setMessages(prev => [...prev, userMsg]);
-    setInputText('');
+    if (!script) {
+      script = document.createElement("script");
+      script.id = 'tawk-script';
+      script.async = true;
+      script.src = 'https://embed.tawk.to/6a58ca6ab7e1ee1d4a16cf84/1jtlddcft';
+      script.charset = 'UTF-8';
+      script.setAttribute('crossorigin', '*');
 
-    // Simulate bot thinking and replying
-    setTimeout(() => {
-      let botReplyText = "Thank you for your message! Our operators are online in the Operations Console. For instant support, please use one of our quick reply buttons or submit a support ticket.";
-      
-      // Match keywords in user text
-      const lower = textToSend.toLowerCase();
-      if (lower.includes('book') || lower.includes('ticket') || lower.includes('buy')) {
-        botReplyText = quickReplies[0].reply;
-      } else if (lower.includes('refund') || lower.includes('cancel') || lower.includes('money')) {
-        botReplyText = quickReplies[1].reply;
-      } else if (lower.includes('contact') || lower.includes('number') || lower.includes('phone') || lower.includes('help')) {
-        botReplyText = quickReplies[2].reply;
-      } else if (lower.includes('fleet') || lower.includes('bus') || lower.includes('status')) {
-        botReplyText = quickReplies[3].reply;
+      initializeTawkAPI();
+
+      const firstScript = document.getElementsByTagName("script")[0];
+      if (firstScript && firstScript.parentNode) {
+        firstScript.parentNode.insertBefore(script, firstScript);
+      } else {
+        document.head.appendChild(script);
       }
+    } else {
+      initializeTawkAPI();
+    }
+  }, []);
 
-      setMessages(prev => [...prev, {
-        id: Date.now() + 1,
-        sender: 'bot',
-        text: botReplyText,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }]);
-    }, 850);
+  const handleOpenTawk = () => {
+    if (window.Tawk_API && typeof window.Tawk_API.maximize === 'function') {
+      setIsOpen(false);
+      try {
+        window.Tawk_API.showWidget();
+        window.Tawk_API.maximize();
+      } catch (err) {
+        console.error("Failed to open tawk.to chat widget:", err);
+      }
+    } else {
+      alert(language === 'fr' ? "Le chat d'assistance se charge. Veuillez réessayer dans un instant." : "Support chat is loading. Please try again in a moment.");
+    }
   };
 
-  const handleQuickClick = (replyObj) => {
-    const userMsg = {
-      id: Date.now(),
-      sender: 'user',
-      text: replyObj.text,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-    setMessages(prev => [...prev, userMsg]);
-
-    setTimeout(() => {
-      setMessages(prev => [...prev, {
-        id: Date.now() + 1,
-        sender: 'bot',
-        text: replyObj.reply,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }]);
-    }, 600);
+  const handleOpenWhatsApp = () => {
+    setIsOpen(false);
+    const phone = WHATSAPP_PHONE;
+    const text = encodeURIComponent(WHATSAPP_MESSAGE);
+    window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
   };
 
   return (
     <div className="fixed bottom-6 right-6 z-50 no-print font-sans">
-      {/* Bot Chat Window */}
+      {/* Support Popover Menu */}
       {isOpen && (
-        <div className="bg-stone-900 border border-stone-800 rounded-2xl w-80 sm:w-96 h-[480px] shadow-2xl flex flex-col overflow-hidden mb-4 transition-all duration-300">
+        <div className="bg-stone-900 border border-stone-850 rounded-2xl w-80 sm:w-[360px] shadow-2xl flex flex-col overflow-hidden mb-4 transition-all duration-300 animate-in fade-in slide-in-from-bottom-5">
           {/* Header */}
           <div className="bg-gradient-to-r from-amber-500 to-amber-600 p-4 text-stone-950 flex items-center justify-between">
             <div className="flex items-center space-x-2.5">
               <div className="bg-stone-950/10 p-1.5 rounded-lg">
-                <Bot className="h-5 w-5" />
+                <Headphones className="h-5 w-5 animate-pulse" />
               </div>
               <div>
-                <h4 className="font-bold text-sm tracking-wide">TransitBot</h4>
+                <h4 className="font-bold text-sm tracking-wide">{t('bot.supportOptions')}</h4>
                 <div className="flex items-center space-x-1">
                   <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
-                  <span className="text-[10px] font-bold opacity-75 uppercase">Virtual Assistant</span>
+                  <span className="text-[10px] font-bold opacity-75 uppercase">{t('bot.statusOnline')}</span>
                 </div>
               </div>
             </div>
             <button 
               onClick={() => setIsOpen(false)}
-              className="text-stone-950 hover:bg-stone-950/10 p-1 rounded-lg transition-colors"
+              className="text-stone-950 hover:bg-stone-950/10 p-1.5 rounded-lg transition-colors"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4.5 w-4.5" />
             </button>
           </div>
 
-          {/* Messages Body */}
-          <div className="flex-grow p-4 overflow-y-auto space-y-3 bg-stone-950/40">
-            {messages.map(msg => (
-              <div 
-                key={msg.id} 
-                className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
-              >
-                <div 
-                  className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-xs leading-relaxed ${
-                    msg.sender === 'user'
-                      ? 'bg-amber-500 text-stone-950 rounded-tr-none font-medium'
-                      : 'bg-stone-800 text-stone-100 rounded-tl-none border border-stone-750'
-                  }`}
-                >
-                  {msg.text}
-                </div>
-                <span className="text-[9px] text-stone-500 mt-1 px-1">{msg.time}</span>
-              </div>
-            ))}
-            <div ref={messageEndRef} />
-          </div>
-
-          {/* Quick Replies Panel */}
-          {messages.length < 8 && (
-            <div className="p-3 bg-stone-950 border-t border-stone-850/60 flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
-              {quickReplies.map((reply, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleQuickClick(reply)}
-                  className="bg-stone-850 hover:bg-stone-800 border border-stone-800 hover:border-amber-500/20 text-[10px] text-stone-300 hover:text-white px-2.5 py-1 rounded-full transition-all duration-200"
-                >
-                  {reply.text}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Message Input Form */}
-          <form 
-            onSubmit={(e) => { e.preventDefault(); handleSendMessage(inputText); }} 
-            className="p-3 bg-stone-900 border-t border-stone-850 flex items-center gap-2"
-          >
-            <input
-              type="text"
-              placeholder="Ask a question..."
-              value={inputText}
-              onChange={e => setInputText(e.target.value)}
-              className="flex-grow bg-stone-950 border border-stone-800 focus:border-amber-500/60 text-white rounded-xl py-2 px-3.5 text-xs focus:outline-none focus:ring-1 focus:ring-amber-500/50"
-            />
+          {/* Body Options */}
+          <div className="p-4 space-y-3 bg-stone-950/40">
+            {/* Live Chat Option */}
             <button
-              type="submit"
-              className="bg-amber-500 hover:bg-amber-400 active:scale-95 text-stone-950 p-2 rounded-xl transition-all"
+              onClick={handleOpenTawk}
+              className="w-full text-left bg-stone-850 hover:bg-stone-800 border border-stone-800 hover:border-amber-500/30 rounded-xl p-3.5 flex items-center gap-3.5 transition-all duration-200 group"
             >
-              <Send className="h-4 w-4" />
+              <div className="bg-amber-500/10 text-amber-500 p-2.5 rounded-xl group-hover:bg-amber-500 group-hover:text-stone-950 transition-all duration-200">
+                <Bot className="h-5 w-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white text-xs font-bold tracking-wide group-hover:text-amber-400 transition-colors">
+                  {t('bot.liveChat')}
+                </p>
+                <p className="text-[10px] text-stone-400 mt-0.5 truncate">
+                  {t('bot.liveChatDesc')}
+                </p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-stone-500 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all" />
             </button>
-          </form>
+
+            {/* WhatsApp Option */}
+            <button
+              onClick={handleOpenWhatsApp}
+              className="w-full text-left bg-stone-850 hover:bg-stone-800 border border-stone-800 hover:border-emerald-500/30 rounded-xl p-3.5 flex items-center gap-3.5 transition-all duration-200 group"
+            >
+              <div className="bg-emerald-500/10 text-emerald-500 p-2.5 rounded-xl group-hover:bg-emerald-500 group-hover:text-white transition-all duration-200">
+                <WhatsAppIcon className="h-5 w-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white text-xs font-bold tracking-wide group-hover:text-emerald-400 transition-colors">
+                  {t('bot.whatsappChat')}
+                </p>
+                <p className="text-[10px] text-stone-400 mt-0.5 truncate">
+                  {t('bot.whatsappChatDesc')}
+                </p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-stone-500 group-hover:text-emerald-500 group-hover:translate-x-0.5 transition-all" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -177,15 +161,17 @@ export default function TransitBot() {
           setIsOpen(!isOpen);
           setUnread(false);
         }}
-        className="bg-amber-500 hover:bg-amber-400 text-stone-950 px-5 py-3.5 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-2.5 font-bold text-sm relative"
-        title="Chat with TransitBot"
+        className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 px-5 py-3.5 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-2.5 font-bold text-sm relative"
+        title="Chat Support"
       >
         <MessageSquare className="h-5 w-5" />
-        <span>Chat with TransitBot</span>
+        <span>
+          {t('bot.needHelp')}
+        </span>
         {unread && (
           <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500 border border-stone-900"></span>
+            <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-50 border border-stone-900"></span>
           </span>
         )}
       </button>

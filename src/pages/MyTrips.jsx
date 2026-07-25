@@ -1,10 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { useLanguage } from '../context/LanguageContext';
 import { Ticket, Calendar, Clock, Eye, Bus, Info } from 'lucide-react';
 
 export default function MyTrips() {
   const { bookings, schedules, routes, cancelBooking, currentUser } = useApp();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   // If not logged in, show the prompt screen
@@ -17,9 +19,9 @@ export default function MyTrips() {
         </div>
         
         {/* Texts */}
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Sign in to view your trips</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('myTrips.signInPrompt')}</h2>
         <p className="text-gray-400 text-sm mb-8 max-w-sm">
-          Access your booking history and download tickets.
+          {t('myTrips.signInSub')}
         </p>
 
         {/* Buttons */}
@@ -28,13 +30,13 @@ export default function MyTrips() {
             onClick={() => navigate('/login')}
             className="border border-gray-300 hover:border-gray-450 hover:bg-gray-50 text-gray-700 font-bold px-6 py-2.5 rounded-lg text-sm transition-all bg-white"
           >
-            Sign In
+            {t('myTrips.signInBtn')}
           </button>
           <button
             onClick={() => navigate('/register')}
             className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-6 py-2.5 rounded-lg text-sm transition-all shadow-md active:scale-97"
           >
-            Register
+            {t('myTrips.registerBtn')}
           </button>
         </div>
       </div>
@@ -53,7 +55,7 @@ export default function MyTrips() {
   };
 
   const handleCancel = async (bookingId) => {
-    if (window.confirm('Are you sure you want to cancel this booking and request a refund?')) {
+    if (window.confirm(t('myTrips.cancelConfirm'))) {
       await cancelBooking(bookingId);
     }
   };
@@ -64,16 +66,16 @@ export default function MyTrips() {
       {/* Header with Title and Action Button */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-1">My Trips</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-1">{t('nav.myTrips')}</h2>
           <p className="text-gray-450 text-sm">
-            {matchingBookings.length} booking{matchingBookings.length !== 1 ? 's' : ''} &bull; Welcome back, {currentUser.name}
+            {matchingBookings.length} {matchingBookings.length !== 1 ? t('myTrips.bookingsCountPlural') : t('myTrips.bookingsCount')} &bull; {t('myTrips.welcomeBack')}, {currentUser.name}
           </p>
         </div>
         <button
           onClick={() => navigate('/')}
           className="bg-amber-500 hover:bg-amber-650 text-white text-sm font-bold px-5 py-2.5 rounded-lg transition-all shadow-sm active:scale-97"
         >
-          Book New Trip
+          {t('myTrips.bookNewTrip')}
         </button>
       </div>
 
@@ -90,7 +92,7 @@ export default function MyTrips() {
             return (
               <div 
                 key={booking.id}
-                className="bg-white border border-gray-250/80 rounded-2xl p-5 hover:shadow-md hover:border-gray-300 transition-all duration-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6"
+                className="bg-white border border-gray-205 rounded-2xl p-5 hover:shadow-md hover:border-gray-300 transition-all duration-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6"
               >
                 
                 {/* Left: Bus Icon in Dark container */}
@@ -105,7 +107,7 @@ export default function MyTrips() {
                       <span className="text-gray-900 font-extrabold text-base">{route.origin} &mdash; {route.destination}</span>
                       <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
                         isCancelled
-                          ? 'bg-red-50 text-red-650 border-red-200'
+                          ? 'bg-red-50 text-red-600 border-red-200'
                           : booking.paymentStatus?.toLowerCase() === 'paid'
                             ? 'bg-green-50 text-green-700 border-green-200'
                             : 'bg-amber-50 text-amber-700 border-amber-200'
@@ -126,11 +128,11 @@ export default function MyTrips() {
                       </div>
                       <div className="flex items-center gap-1">
                         <Ticket className="w-3.5 h-3.5" />
-                        <span>Seat {booking.seats ? booking.seats.join(', ') : 'None'}</span>
+                        <span>{t('myTrips.seat')} {booking.seats ? booking.seats.join(', ') : 'None'}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Info className="w-3.5 h-3.5" />
-                        <span>Ref: {booking.id}</span>
+                        <span>{t('myTrips.ref')}: {booking.id}</span>
                       </div>
                     </div>
                   </div>
@@ -152,14 +154,14 @@ export default function MyTrips() {
                       className="border border-gray-250 hover:bg-gray-50 text-gray-700 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 bg-white"
                     >
                       <Eye className="w-3.5 h-3.5 text-gray-500" />
-                      <span>View</span>
+                      <span>{t('myTrips.view')}</span>
                     </button>
                     {!isCancelled && (
                       <button
                         onClick={() => handleCancel(booking.id)}
-                        className="border border-red-200 hover:bg-red-50 text-red-650 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all"
+                        className="border border-red-200 hover:bg-red-50 text-red-600 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all"
                       >
-                        Cancel
+                        {t('myTrips.cancel')}
                       </button>
                     )}
                   </div>
@@ -171,12 +173,12 @@ export default function MyTrips() {
         ) : (
           <div className="bg-white border border-gray-200 rounded-2xl py-16 text-center text-gray-400 text-sm shadow-sm">
             <Ticket className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p>You don't have any booked trips yet.</p>
+            <p>{t('myTrips.noTrips')}</p>
             <button
               onClick={() => navigate('/')}
               className="mt-3 text-amber-500 hover:text-amber-600 font-bold text-xs"
             >
-              Start booking now &rarr;
+              {t('myTrips.startBooking')} &rarr;
             </button>
           </div>
         )}
