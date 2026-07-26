@@ -222,3 +222,64 @@ def hold_journey_seat(journey_id: str, payload: SeatHoldRequest, user: dict = De
                 row.expires_at = datetime.utcnow() + timedelta(minutes=HOLD_TTL_MINUTES)
 
     return SeatHoldResponse(journey_id=journey_id, seat=seat, booking_ref=booking_ref, status="held")
+
+class SeatConfirmRequest(BaseModel):
+    seat: str
+    booking_ref: str
+
+class SeatConfirmResponse(BaseModel):
+    journey_id: str
+    seat: str
+    booking_ref: str
+    status: str
+
+@router.post("/journeys/{journey_id}/confirm", response_model=SeatConfirmResponse)
+def confirm_journey_seat(journey_id: str, payload: SeatConfirmRequest, user: dict = Depends(decode_jwt_user)) -> SeatConfirmResponse:
+    seat = payload.seat
+    booking_ref = payload.booking_ref
+
+    with SessionLocal() as session:
+        if engine.dialect.name == "sqlite":
+            session.execute(text("BEGIN IMMEDIATE"))
+            try:
+                row = (
+                    session.query(JourneySeat)
+                    .filter(JourneySeat.journey_id == journey_id, JourneySeat.seat_id == seat)
+                    .with_for_update()
+                    .one_or_none()
+                )
+                if row is None:
+                    session.rollback()
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid seat")
+                if row.status != "held":
+                    session.rollback()
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Seat is not held")
+                if row.booking_ref != booking_ref:
+                    session.rollback()
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid booking reference")
+
+                row.status = "taken"
+                row.expires_at = None
+                session.commit()
+            except Exception:
+                session.rollback()
+                raise
+        else:
+            with session.begin():
+                row = (
+                    session.query(JourneySeat)
+                    .filter(JourneySeat.journey_id == journey_id, JourneySeat.seat_id == seat)
+                    .with_for_update()
+                    .one_or_none()
+                )
+                if row is None:
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid seat")
+                if row.status != "held":
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Seat is not held")
+                if row.booking_ref != booking_ref:
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid booking reference")
+
+                row.status = "taken"
+                row.expires_at = None
+
+    return SeatConfirmResponse(journey_id=journey_id, seat=seat, booking_ref=booking_ref, status="taken")

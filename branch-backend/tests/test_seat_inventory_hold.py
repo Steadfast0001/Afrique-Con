@@ -109,3 +109,55 @@ def test_concurrent_holds_only_one_succeeds_for_same_seat() -> None:
     with SessionLocal() as session:
         seated = session.query(JourneySeat).filter_by(journey_id=journey_id, seat_id="A1").one()
         assert seated.status == "held"
+
+def test_confirm_held_seat() -> None:
+    token = make_token("branch_admin", "BUEA")
+    journey_id = "BUEA-DOU-2026-07-10"
+    
+    # First hold a seat
+    inventory_resp = client.get(f"/journeys/{journey_id}/seats", headers={"Authorization": f"Bearer {token}"})
+    seats = inventory_resp.json()["seats"]
+    available = next((seat for seat in seats if seat["status"] == "available"), None)
+    assert available is not None
+
+    hold_resp = client.post(
+        f"/journeys/{journey_id}/hold",
+        json={"seat": available["id"]},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert hold_resp.status_code == 200
+    booking_ref = hold_resp.json()["booking_ref"]
+    
+    # Then confirm it
+    confirm_resp = client.post(
+        f"/journeys/{journey_id}/confirm",
+        json={"seat": available["id"], "booking_ref": booking_ref},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert confirm_resp.status_code == 200
+    assert confirm_resp.json()["status"] == "taken"
+
+def test_confirm_seat_invalid_ref() -> None:
+    token = make_token("branch_admin", "BUEA")
+    journey_id = "BUEA-DOU-2026-07-10"
+    
+    # First hold a seat
+    inventory_resp = client.get(f"/journeys/{journey_id}/seats", headers={"Authorization": f"Bearer {token}"})
+    seats = inventory_resp.json()["seats"]
+    available = next((seat for seat in seats if seat["status"] == "available"), None)
+    
+    hold_resp = client.post(
+        f"/journeys/{journey_id}/hold",
+        json={"seat": available["id"]},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert hold_resp.status_code == 200
+    
+    # Try to confirm with invalid ref
+    confirm_resp = client.post(
+        f"/journeys/{journey_id}/confirm",
+        json={"seat": available["id"], "booking_ref": "INVALID-REF"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert confirm_resp.status_code == 400
+    assert "Invalid booking reference" in confirm_resp.json()["detail"]
