@@ -604,7 +604,7 @@ export default function Book() {
                           <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('book.fullName')}</label>
                           <input
                             type="text"
-                            placeholder="e.g. Brandon Bruk"
+                            placeholder="e.g. Brandy Jay"
                             value={passenger.name}
                             onChange={e => {
                               const newList = [...passengerList];
