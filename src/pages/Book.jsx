@@ -249,6 +249,8 @@ export default function Book() {
                 serviceClass={serviceClass}
                 onServiceClassChange={setServiceClass}
                 busName={bus.name}
+                busCapacity={bus.capacity}
+                basePrice={route.price}
                 t={t}
               />
               <div className="flex justify-end">
