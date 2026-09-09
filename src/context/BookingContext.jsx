@@ -34,6 +34,7 @@ const parsePassengers = (pField) => {
 };
 
 export const LOCAL_BOOKINGS_KEY = 'transitflow_local_bookings';
+export const LOCAL_SUPPORT_KEY = 'transitflow_local_support_tickets';
 
 export const getLocalBookings = () => {
   try {
@@ -76,16 +77,96 @@ export const saveLocalBookings = (list) => {
   } catch {}
 };
 
+export const getLocalSupportTickets = () => {
+  try {
+    const raw = localStorage.getItem(LOCAL_SUPPORT_KEY);
+    if (!raw) {
+      const initialTickets = [
+        {
+          id: 'SUP-1048',
+          customerName: 'Jean-Paul Nkomo',
+          customerPhone: '237670001122',
+          customerEmail: 'jp.nkomo@gmail.com',
+          bookingRef: 'bk-849201',
+          category: 'Seat Modification',
+          priority: 'high',
+          subject: 'Seat change request on Douala ➔ Yaoundé VIP bus',
+          message: 'Hello, I booked seat 1A on tomorrow morning departure (07:30 AM) but would like to switch to a window seat with my colleague. Is that possible?',
+          status: 'open',
+          date: new Date().toISOString().split('T')[0],
+          replies: []
+        },
+        {
+          id: 'SUP-1049',
+          customerName: 'Fatou Bello',
+          customerPhone: '237699112233',
+          customerEmail: 'fatou.bello@yahoo.fr',
+          bookingRef: 'bk-953794',
+          category: 'Refund & Billing',
+          priority: 'medium',
+          subject: 'Payment receipt confirmation & refund query',
+          message: 'My MTN MoMo was debited twice during the online booking process for trip ref bk-953794. Please verify transaction ID #992817.',
+          status: 'in-progress',
+          date: new Date(Date.now() - 3600000 * 4).toISOString().split('T')[0],
+          replies: [
+            {
+              id: 'rep-1',
+              sender: 'agent',
+              senderName: 'Customer Desk Agent',
+              text: 'Hello Fatou, we are reviewing your MTN Mobile Money transaction logs with our finance gateway.',
+              timestamp: '2 hours ago',
+              channel: 'In-App'
+            }
+          ]
+        },
+        {
+          id: 'SUP-1050',
+          customerName: 'Emmanuel Okafor',
+          customerPhone: '2348031234567',
+          customerEmail: 'emmanuel.okafor@gmail.com',
+          bookingRef: 'bk-774411',
+          category: 'Border Documentation',
+          priority: 'urgent',
+          subject: 'Cross-border entry documents for Douala ➔ Ikom (Nigeria)',
+          message: 'Do I need a yellow fever vaccination card along with my ECOWAS travel certificate for the Friday cross-border trip?',
+          status: 'open',
+          date: new Date(Date.now() - 3600000 * 8).toISOString().split('T')[0],
+          replies: []
+        }
+      ];
+      localStorage.setItem(LOCAL_SUPPORT_KEY, JSON.stringify(initialTickets));
+      return initialTickets;
+    }
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+};
+
+export const saveLocalSupportTickets = (list) => {
+  try {
+    localStorage.setItem(LOCAL_SUPPORT_KEY, JSON.stringify(list));
+  } catch {}
+};
+
 export function BookingProvider({ children }) {
   const { currentUser } = useAuth();
   const [bookings, setBookings] = useState(() => getLocalBookings());
-  const [supportTickets, setSupportTickets] = useState([]);
+  const [supportTickets, setSupportTickets] = useState(() => getLocalSupportTickets());
   const [loading, setLoading] = useState(true);
 
   const updateBookingsState = (newBookingsOrFn) => {
     setBookings(prev => {
       const resolved = typeof newBookingsOrFn === 'function' ? newBookingsOrFn(prev) : newBookingsOrFn;
       saveLocalBookings(resolved);
+      return resolved;
+    });
+  };
+
+  const updateSupportState = (newTicketsOrFn) => {
+    setSupportTickets(prev => {
+      const resolved = typeof newTicketsOrFn === 'function' ? newTicketsOrFn(prev) : newTicketsOrFn;
+      saveLocalSupportTickets(resolved);
       return resolved;
     });
   };
@@ -137,20 +218,37 @@ export function BookingProvider({ children }) {
       const { data: supportData, error: supportErr } = await supabase.from('support_tickets').select('*');
       if (supportErr) throw supportErr;
 
-      setSupportTickets((supportData || []).map(t => ({
-        ...t,
-        id: String(t.id),
-        userId: t.user_id ? String(t.user_id) : null,
-        customerName: String(t.customer_name || t.customerName || ''),
-        customerEmail: String(t.customer_email || t.customerEmail || ''),
-        subject: String(t.subject || ''),
-        message: String(t.message || ''),
-        status: String(t.status || 'open'),
-        date: String((t.created_at || '').split('T')[0] || new Date().toISOString().split('T')[0])
-      })));
+      if (supportData && supportData.length > 0) {
+        const mappedTickets = supportData.map(t => ({
+          ...t,
+          id: String(t.id),
+          userId: t.user_id ? String(t.user_id) : null,
+          customerName: String(t.customer_name || t.customerName || ''),
+          customerPhone: String(t.customer_phone || t.customerPhone || ''),
+          customerEmail: String(t.customer_email || t.customerEmail || ''),
+          bookingRef: String(t.booking_ref || t.bookingRef || ''),
+          category: String(t.category || 'General Inquiry'),
+          priority: String(t.priority || 'medium'),
+          subject: String(t.subject || ''),
+          message: String(t.message || ''),
+          status: String(t.status || 'open'),
+          replies: Array.isArray(t.replies) ? t.replies : [],
+          date: String((t.created_at || '').split('T')[0] || new Date().toISOString().split('T')[0])
+        }));
+
+        updateSupportState(prev => {
+          const combined = [...mappedTickets];
+          prev.forEach(lt => {
+            if (!combined.some(st => st.id === lt.id)) {
+              combined.push(lt);
+            }
+          });
+          return combined;
+        });
+      }
 
     } catch (err) {
-      console.error('Error fetching Booking data from Supabase:', err);
+      console.error('Error fetching Booking/Support data from Supabase:', err);
     } finally {
       setLoading(false);
     }
@@ -380,12 +478,17 @@ export function BookingProvider({ children }) {
   };
 
   // Support Operations
-  const addSupportTicket = async (subject, message) => {
+  const addSupportTicket = async (ticketData) => {
     const payload = {
-      user_id: isUUID(currentUser?.id) ? currentUser.id : null,
-      subject,
-      message,
-      status: 'Open'
+      customer_name: ticketData.customerName || currentUser?.name || 'Customer',
+      customer_phone: ticketData.customerPhone || '',
+      customer_email: ticketData.customerEmail || currentUser?.email || '',
+      booking_ref: ticketData.bookingRef || null,
+      category: ticketData.category || 'General',
+      priority: ticketData.priority || 'medium',
+      subject: ticketData.subject || '',
+      message: ticketData.message || '',
+      status: 'open'
     };
 
     if (isSupabaseConfigured) {
@@ -394,10 +497,20 @@ export function BookingProvider({ children }) {
         if (!error && data) {
           const formatted = {
             ...data,
-            userId: data.user_id,
+            id: String(data.id),
+            customerName: data.customer_name,
+            customerPhone: data.customer_phone,
+            customerEmail: data.customer_email,
+            bookingRef: data.booking_ref,
+            category: data.category,
+            priority: data.priority,
+            subject: data.subject,
+            message: data.message,
+            status: data.status,
+            replies: [],
             date: data.created_at.split('T')[0]
           };
-          setSupportTickets(prev => [formatted, ...prev]);
+          updateSupportState(prev => [formatted, ...prev]);
           return formatted;
         }
       } catch (err) {
@@ -406,15 +519,20 @@ export function BookingProvider({ children }) {
     }
 
     const localTicket = {
-      id: `ticket-${Date.now()}`,
-      userId: currentUser ? currentUser.id : null,
-      subject,
-      message,
-      status: 'Open',
-      date: new Date().toISOString().split('T')[0],
-      created_at: new Date().toISOString()
+      id: `SUP-${Math.floor(1000 + Math.random() * 9000)}`,
+      customerName: payload.customer_name,
+      customerPhone: payload.customer_phone,
+      customerEmail: payload.customer_email,
+      bookingRef: payload.booking_ref,
+      category: payload.category,
+      priority: payload.priority,
+      subject: payload.subject,
+      message: payload.message,
+      status: 'open',
+      replies: [],
+      date: new Date().toISOString().split('T')[0]
     };
-    setSupportTickets(prev => [localTicket, ...prev]);
+    updateSupportState(prev => [localTicket, ...prev]);
     return localTicket;
   };
 
@@ -428,7 +546,74 @@ export function BookingProvider({ children }) {
         enqueueOfflineMutation({ type: 'UPDATE', table: 'support_tickets', payload: { status }, match: { id: ticketId } });
       }
     }
-    setSupportTickets(prev => prev.map(t => t.id === ticketId ? { ...t, status } : t));
+    updateSupportState(prev => prev.map(t => t.id === ticketId ? { ...t, status } : t));
+  };
+
+  const replySupportTicket = async (ticketId, replyText, channel = 'In-App') => {
+    const newReply = {
+      id: `rep-${Date.now()}`,
+      sender: 'agent',
+      senderName: currentUser?.name || 'Support Representative',
+      text: replyText,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      channel
+    };
+
+    updateSupportState(prev => prev.map(t => {
+      if (t.id === ticketId) {
+        const updatedReplies = [...(t.replies || []), newReply];
+        return {
+          ...t,
+          status: t.status === 'open' ? 'in-progress' : t.status,
+          replies: updatedReplies
+        };
+      }
+      return t;
+    }));
+
+    if (isSupabaseConfigured && isUUID(ticketId)) {
+      try {
+        const current = supportTickets.find(t => t.id === ticketId);
+        const updatedReplies = [...(current?.replies || []), newReply];
+        await supabase.from('support_tickets').update({
+          replies: updatedReplies,
+          status: current?.status === 'open' ? 'in-progress' : current?.status
+        }).eq('id', ticketId);
+      } catch (err) {
+        console.warn('Supabase reply error:', err);
+      }
+    }
+
+    return newReply;
+  };
+
+  const deleteSupportTicket = async (ticketId) => {
+    if (isSupabaseConfigured && isUUID(ticketId)) {
+      try {
+        await supabase.from('support_tickets').delete().eq('id', ticketId);
+      } catch (err) {
+        enqueueOfflineMutation({ type: 'DELETE', table: 'support_tickets', match: { id: ticketId } });
+      }
+    }
+    updateSupportState(prev => prev.filter(t => t.id !== ticketId));
+  };
+
+  const deleteSupportTickets = async (ticketIds = []) => {
+    if (!ticketIds.length) return;
+    const idSet = new Set(ticketIds.map(String));
+    if (isSupabaseConfigured) {
+      const validUuids = ticketIds.filter(isUUID);
+      if (validUuids.length > 0) {
+        try {
+          await supabase.from('support_tickets').delete().in('id', validUuids);
+        } catch (err) {
+          validUuids.forEach(id => {
+            enqueueOfflineMutation({ type: 'DELETE', table: 'support_tickets', match: { id } });
+          });
+        }
+      }
+    }
+    updateSupportState(prev => prev.filter(t => !idSet.has(String(t.id))));
   };
 
   return (
@@ -445,6 +630,9 @@ export function BookingProvider({ children }) {
         toggleCheckIn,
         addSupportTicket,
         updateTicketStatus,
+        replySupportTicket,
+        deleteSupportTicket,
+        deleteSupportTickets,
         loadBookingData
       }}
     >

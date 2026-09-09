@@ -69,6 +69,9 @@ export function useApp() {
     toggleCheckIn: booking?.toggleCheckIn,
     addSupportTicket: booking?.addSupportTicket,
     updateTicketStatus: booking?.updateTicketStatus,
+    replySupportTicket: booking?.replySupportTicket,
+    deleteSupportTicket: booking?.deleteSupportTicket,
+    deleteSupportTickets: booking?.deleteSupportTickets,
     loadBookingData: booking?.loadBookingData
   };
 }
