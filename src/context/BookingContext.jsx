@@ -245,6 +245,51 @@ export function BookingProvider({ children }) {
     return localFormatted;
   };
 
+  const updateBooking = async (bookingId, updates) => {
+    if (!bookingId) return;
+
+    const dbPayload = {};
+    if (updates.checkInStatus !== undefined) dbPayload.check_in_status = updates.checkInStatus;
+    if (updates.paymentStatus !== undefined) dbPayload.payment_status = updates.paymentStatus;
+    if (updates.travelClass !== undefined) dbPayload.travel_class = updates.travelClass;
+    if (updates.passengerName !== undefined) dbPayload.passenger_name = updates.passengerName;
+    if (updates.passengerEmail !== undefined) dbPayload.passenger_email = updates.passengerEmail;
+    if (updates.phone !== undefined) dbPayload.phone = updates.phone;
+    if (updates.seats !== undefined) dbPayload.seats = parseSeats(updates.seats);
+    if (updates.passportNumber !== undefined) dbPayload.passport_number = updates.passportNumber;
+
+    if (isSupabaseConfigured && Object.keys(dbPayload).length > 0) {
+      try {
+        const { error } = await supabase
+          .from('bookings')
+          .update(dbPayload)
+          .eq('id', bookingId);
+        if (error) {
+          console.warn('Supabase updateBooking warning, queueing offline mutation:', error.message);
+          enqueueOfflineMutation({
+            type: 'UPDATE',
+            table: 'bookings',
+            payload: dbPayload,
+            match: { id: bookingId }
+          });
+        }
+      } catch (err) {
+        console.warn('Supabase updateBooking catch, queueing mutation:', err);
+        enqueueOfflineMutation({
+          type: 'UPDATE',
+          table: 'bookings',
+          payload: dbPayload,
+          match: { id: bookingId }
+        });
+      }
+    }
+
+    updateBookingsState(prev => prev.map(bk =>
+      bk.id === bookingId ? { ...bk, ...updates } : bk
+    ));
+    return { id: bookingId, ...updates };
+  };
+
   const cancelBooking = async (bookingId) => {
     if (isSupabaseConfigured) {
       try {
@@ -262,7 +307,7 @@ export function BookingProvider({ children }) {
       }
     }
 
-    setBookings(prev => prev.map(bk =>
+    updateBookingsState(prev => prev.map(bk =>
       bk.id === bookingId
         ? { ...bk, checkInStatus: 'Cancelled', paymentStatus: 'Refunded' }
         : bk
@@ -291,7 +336,7 @@ export function BookingProvider({ children }) {
       }
     }
 
-    setBookings(prev => prev.map(b =>
+    updateBookingsState(prev => prev.map(b =>
       b.id === bookingId ? { ...b, checkInStatus: nextStatus } : b
     ));
   };
@@ -355,6 +400,7 @@ export function BookingProvider({ children }) {
         supportTickets,
         loading,
         addBooking,
+        updateBooking,
         cancelBooking,
         toggleCheckIn,
         addSupportTicket,

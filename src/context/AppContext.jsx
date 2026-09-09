@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { AuthProvider, useAuth, isAdminEmail, getLocalUsers, saveLocalUsers, LOCAL_USERS_KEY, LOCAL_SESSION_KEY, ADMIN_EMAILS } from './AuthContext';
 import { FleetProvider, useFleet } from './FleetContext';
 import { BookingProvider, useBooking } from './BookingContext';
@@ -59,6 +59,7 @@ export function useApp() {
     supportTickets: booking?.supportTickets || [],
     bookingLoading: booking?.loading,
     addBooking: booking?.addBooking,
+    updateBooking: booking?.updateBooking,
     cancelBooking: booking?.cancelBooking,
     toggleCheckIn: booking?.toggleCheckIn,
     addSupportTicket: booking?.addSupportTicket,
