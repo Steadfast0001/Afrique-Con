@@ -290,6 +290,44 @@ export function BookingProvider({ children }) {
     return { id: bookingId, ...updates };
   };
 
+  const deleteBooking = async (bookingId) => {
+    if (!bookingId) return;
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.from('bookings').delete().eq('id', bookingId);
+      } catch (err) {
+        enqueueOfflineMutation({
+          type: 'DELETE',
+          table: 'bookings',
+          match: { id: bookingId }
+        });
+      }
+    }
+
+    updateBookingsState(prev => prev.filter(bk => bk.id !== bookingId));
+  };
+
+  const deleteBookings = async (bookingIds = []) => {
+    if (!bookingIds || bookingIds.length === 0) return;
+    const idSet = new Set(bookingIds.map(String));
+
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.from('bookings').delete().in('id', Array.from(idSet));
+      } catch (err) {
+        bookingIds.forEach(id => {
+          enqueueOfflineMutation({
+            type: 'DELETE',
+            table: 'bookings',
+            match: { id }
+          });
+        });
+      }
+    }
+
+    updateBookingsState(prev => prev.filter(bk => !idSet.has(String(bk.id))));
+  };
+
   const cancelBooking = async (bookingId) => {
     if (isSupabaseConfigured) {
       try {
@@ -401,6 +439,8 @@ export function BookingProvider({ children }) {
         loading,
         addBooking,
         updateBooking,
+        deleteBooking,
+        deleteBookings,
         cancelBooking,
         toggleCheckIn,
         addSupportTicket,

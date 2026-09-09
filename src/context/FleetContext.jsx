@@ -240,6 +240,7 @@ export function FleetProvider({ children }) {
   };
 
   const deleteBus = async (busId) => {
+    if (!busId) return;
     if (isSupabaseConfigured && isUUID(busId)) {
       try {
         await supabase.from('buses').delete().eq('id', busId);
@@ -248,6 +249,24 @@ export function FleetProvider({ children }) {
       }
     }
     setBuses(prev => prev.filter(b => b.id !== busId));
+  };
+
+  const deleteBuses = async (busIds = []) => {
+    if (!busIds.length) return;
+    const idSet = new Set(busIds.map(String));
+    if (isSupabaseConfigured) {
+      const validUuids = busIds.filter(isUUID);
+      if (validUuids.length > 0) {
+        try {
+          await supabase.from('buses').delete().in('id', validUuids);
+        } catch (err) {
+          validUuids.forEach(id => {
+            enqueueOfflineMutation({ type: 'DELETE', table: 'buses', match: { id } });
+          });
+        }
+      }
+    }
+    setBuses(prev => prev.filter(b => !idSet.has(String(b.id))));
   };
 
   // Route Operations
@@ -303,6 +322,7 @@ export function FleetProvider({ children }) {
   };
 
   const deleteRoute = async (routeId) => {
+    if (!routeId) return;
     if (isSupabaseConfigured && isUUID(routeId)) {
       try {
         await supabase.from('routes').delete().eq('id', routeId);
@@ -311,6 +331,24 @@ export function FleetProvider({ children }) {
       }
     }
     setRoutes(prev => prev.filter(r => r.id !== routeId));
+  };
+
+  const deleteRoutes = async (routeIds = []) => {
+    if (!routeIds.length) return;
+    const idSet = new Set(routeIds.map(String));
+    if (isSupabaseConfigured) {
+      const validUuids = routeIds.filter(isUUID);
+      if (validUuids.length > 0) {
+        try {
+          await supabase.from('routes').delete().in('id', validUuids);
+        } catch (err) {
+          validUuids.forEach(id => {
+            enqueueOfflineMutation({ type: 'DELETE', table: 'routes', match: { id } });
+          });
+        }
+      }
+    }
+    setRoutes(prev => prev.filter(r => !idSet.has(String(r.id))));
   };
 
   // Schedule Operations
@@ -397,6 +435,7 @@ export function FleetProvider({ children }) {
   };
 
   const deleteSchedule = async (scheduleId) => {
+    if (!scheduleId) return;
     if (isSupabaseConfigured && isUUID(scheduleId)) {
       try {
         await supabase.from('schedules').delete().eq('id', scheduleId);
@@ -405,6 +444,24 @@ export function FleetProvider({ children }) {
       }
     }
     setSchedules(prev => prev.filter(s => s.id !== scheduleId));
+  };
+
+  const deleteSchedules = async (scheduleIds = []) => {
+    if (!scheduleIds.length) return;
+    const idSet = new Set(scheduleIds.map(String));
+    if (isSupabaseConfigured) {
+      const validUuids = scheduleIds.filter(isUUID);
+      if (validUuids.length > 0) {
+        try {
+          await supabase.from('schedules').delete().in('id', validUuids);
+        } catch (err) {
+          validUuids.forEach(id => {
+            enqueueOfflineMutation({ type: 'DELETE', table: 'schedules', match: { id } });
+          });
+        }
+      }
+    }
+    setSchedules(prev => prev.filter(s => !idSet.has(String(s.id))));
   };
 
   return (
@@ -417,12 +474,15 @@ export function FleetProvider({ children }) {
         addBus,
         updateBus,
         deleteBus,
+        deleteBuses,
         addRoute,
         updateRoute,
         deleteRoute,
+        deleteRoutes,
         addSchedule,
         updateSchedule,
         deleteSchedule,
+        deleteSchedules,
         loadFleetData
       }}
     >
