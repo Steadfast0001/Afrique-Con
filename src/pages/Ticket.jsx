@@ -73,8 +73,32 @@ export default function Ticket() {
   }
   if (pages.length === 0) pages.push([]);
 
-  const handlePrint = () => {
-    window.print();
+  const [copied, setCopied] = useState(false);
+
+  const handleShareWhatsApp = () => {
+    const seatsStr = individualPasses.map(p => p.seatNumber).join(', ');
+    const msg = `🚌 *AFRIQUE CON / TRANSITFLOW E-TICKET CONFIRMATION*\n\n` +
+      `Booking Ref: *${booking.id}*\n` +
+      `Passenger: *${booking.passengerName}*\n` +
+      `Route: *${route.origin}* ➔ *${route.destination}*\n` +
+      `Date: *${schedule.departureDate}* at *${schedule.departureTime}* (Gate 3)\n` +
+      `Seat(s): *${seatsStr}*\n` +
+      `Fare: *${Number(booking.totalAmount).toLocaleString()} FCFA* (Paid)\n\n` +
+      `🎟️ View Boarding Pass: ${window.location.href}\n\n` +
+      `_Please arrive 30 mins before departure at Akwa / Quartier Fouda._`;
+    
+    const cleanPhone = (booking.phone || '').replace(/[^0-9]/g, '');
+    const normalizedPhone = cleanPhone.startsWith('237') ? cleanPhone : cleanPhone.startsWith('234') ? cleanPhone : ('237' + cleanPhone);
+    const url = `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
+  };
+
+  const handleCopyRef = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(booking.id);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    }
   };
 
   return (
@@ -112,21 +136,38 @@ export default function Ticket() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={handleShareWhatsApp}
+            className="bg-emerald-500 hover:bg-emerald-600 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+            title="Send digital ticket via WhatsApp"
+          >
+            <span>💬 Send WhatsApp Ticket</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleCopyRef}
+            className="border border-gray-200 hover:bg-gray-50 text-gray-700 px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1"
+          >
+            <span>{copied ? '✓ Copied!' : '📋 Copy Ref'}</span>
+          </button>
+
           <button
             onClick={() => setViewMode(v => v === 'a4' ? 'single' : 'a4')}
             className="border border-gray-200 hover:bg-gray-50 text-gray-700 px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
           >
             <Layers className="w-3.5 h-3.5 text-gray-500" />
-            {viewMode === 'a4' ? 'Show Single Slips' : 'Show Full A4 Sheet (6 per page)'}
+            {viewMode === 'a4' ? 'Single View' : 'Full A4 Sheet'}
           </button>
 
           <button
             onClick={handlePrint}
-            className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-stone-950 px-5 py-2 rounded-xl font-bold flex items-center gap-2 text-xs shadow-md transition-all active:scale-97"
+            className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-stone-950 px-4 py-2 rounded-xl font-bold flex items-center gap-2 text-xs shadow-md transition-all active:scale-97"
           >
             <Printer className="w-4 h-4" />
-            <span>Print A4 Boarding Passes</span>
+            <span>Print A4</span>
           </button>
         </div>
       </div>

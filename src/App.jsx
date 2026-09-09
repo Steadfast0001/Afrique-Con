@@ -14,11 +14,13 @@ import RoutesManager from './pages/admin/RoutesManager';
 import SchedulesManager from './pages/admin/SchedulesManager';
 import Manifests from './pages/admin/Manifests';
 import AgentConsole from './pages/admin/AgentConsole';
+import Scanner from './pages/admin/Scanner';
 import Bookings from './pages/admin/Bookings';
 import SupportDesk from './pages/admin/SupportDesk';
 import Settings from './pages/admin/Settings';
 
 import TransitBot from './components/TransitBot';
+import NetworkStatusBanner from './components/NetworkStatusBanner';
 
 // Standard User Layout: Navbar on top, page content below
 function UserLayout() {
@@ -32,6 +34,7 @@ function UserLayout() {
       </main>
       <div className="no-print">
         <TransitBot />
+        <NetworkStatusBanner />
       </div>
     </div>
   );
@@ -63,6 +66,7 @@ export default function App() {
           <Route path="support" element={<SupportDesk />} />
           <Route path="manifests" element={<Manifests />} />
           <Route path="agent-console" element={<AgentConsole />} />
+          <Route path="scanner" element={<Scanner />} />
           <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>

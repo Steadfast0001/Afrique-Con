@@ -38,6 +38,25 @@ async function getCampayToken() {
   return cachedToken;
 }
 
+// Rate Limiting Store (In-Memory Sliding Window for Serverless Edge)
+const rateLimitMap = new Map();
+const RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
+const MAX_REQUESTS_PER_WINDOW = 6;
+
+function checkRateLimit(ipOrIdentifier) {
+  const now = Date.now();
+  const record = rateLimitMap.get(ipOrIdentifier) || [];
+  const validTimestamps = record.filter(ts => now - ts < RATE_LIMIT_WINDOW_MS);
+  
+  if (validTimestamps.length >= MAX_REQUESTS_PER_WINDOW) {
+    return false;
+  }
+  
+  validTimestamps.push(now);
+  rateLimitMap.set(ipOrIdentifier, validTimestamps);
+  return true;
+}
+
 export default async function handler(req, res) {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -54,6 +73,14 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method Not Allowed' });
+  }
+
+  const clientIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
+  if (!checkRateLimit(clientIp)) {
+    return res.status(429).json({
+      success: false,
+      message: 'Too Many Payment Requests. Please wait 5 minutes before trying again.'
+    });
   }
 
   try {

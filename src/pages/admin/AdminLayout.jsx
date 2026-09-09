@@ -57,6 +57,11 @@ const icons = {
       <circle cx="12" cy="12" r="3" strokeWidth={2}/>
     </svg>
   ),
+  scanner: (
+    <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7V5a2 2 0 012-2h2m10 0h2a2 2 0 012 2v2m0 10v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2M7 12h10"/>
+    </svg>
+  ),
   logout: (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
@@ -157,6 +162,9 @@ export default function AdminLayout() {
 
           {/* SUPPORT Group */}
           <p className="text-stone-600 text-[10px] font-bold uppercase tracking-widest px-3 pt-5 pb-2">Support &amp; Compliance</p>
+          <Link to="/admin/scanner" className={linkClass('/admin/scanner')}>
+            {icons.scanner}<span>Gate Scanner</span>
+          </Link>
           <Link to="/admin/support" className={linkClass('/admin/support')}>
             {icons.support}<span>Support Desk</span>
           </Link>
