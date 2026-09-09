@@ -40,7 +40,7 @@ export default function FleetManager() {
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold px-5 py-2.5 rounded-xl text-sm transition-colors"
+          className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4"/>
@@ -59,18 +59,18 @@ export default function FleetManager() {
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Bus Model</label>
               <input type="text" placeholder="e.g. Toyota Coaster"
                 value={newBus.name} onChange={e => { setNewBus(p => ({...p, name: e.target.value})); setError(''); }}
-                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400 placeholder-stone-600"/>
+                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400 placeholder-stone-600"/>
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Plate Number</label>
               <input type="text" placeholder="e.g. CE-1234-AB"
                 value={newBus.plate} onChange={e => { setNewBus(p => ({...p, plate: e.target.value})); setError(''); }}
-                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400 placeholder-stone-600"/>
+                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400 placeholder-stone-600"/>
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Class</label>
               <select value={newBus.type} onChange={e => setNewBus(p => ({...p, type: e.target.value}))}
-                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400">
+                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400">
                 <option value="Silver" className="bg-white text-gray-900">Silver</option>
                 <option value="Gold" className="bg-white text-gray-900">Gold</option>
               </select>
@@ -78,21 +78,25 @@ export default function FleetManager() {
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Seats</label>
               <input type="number" value={newBus.capacity} onChange={e => setNewBus(p => ({...p, capacity: e.target.value}))}
-                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400"/>
+                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400"/>
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Branch</label>
               <select value={newBus.branch} onChange={e => setNewBus(p => ({...p, branch: e.target.value}))}
-                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400">
-                <option className="bg-white text-gray-900">Douala</option>
-                <option className="bg-white text-gray-900">Yaoundé</option>
-                <option className="bg-white text-gray-900">Bamenda</option>
-                <option className="bg-white text-gray-900">Bafoussam</option>
+                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400">
+                <option value="Douala" className="bg-white text-gray-900">Douala</option>
+                <option value="Yaoundé" className="bg-white text-gray-900">Yaoundé</option>
+                <option value="Bamenda" className="bg-white text-gray-900">Bamenda</option>
+                <option value="Bafoussam" className="bg-white text-gray-900">Bafoussam</option>
+                <option value="Buea" className="bg-white text-gray-900">Buea</option>
+                <option value="Limbe" className="bg-white text-gray-900">Limbe</option>
+                <option value="Kumba" className="bg-white text-gray-900">Kumba</option>
+                <option value="Garoua" className="bg-white text-gray-900">Garoua</option>
               </select>
             </div>
             <div className="col-span-2 sm:col-span-3 flex gap-3 justify-end pt-1">
               <button type="button" onClick={() => setShowForm(false)} className="text-gray-500 hover:text-stone-200 text-sm font-medium px-4 py-2 transition-colors">Cancel</button>
-              <button type="submit" className="bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold px-5 py-2 rounded-xl text-sm transition-colors">Register Bus</button>
+              <button type="submit" className="bg-red-500 hover:bg-red-600 text-white font-bold px-5 py-2 rounded-xl text-sm transition-colors">Register Bus</button>
             </div>
           </form>
         </div>
@@ -107,7 +111,7 @@ export default function FleetManager() {
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center flex-shrink-0 border border-gray-200">
-                  <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 19v2M16 19v2M3 5h18a2 2 0 012 2v8a2 2 0 01-2 2H3a2 2 0 01-2-2V7a2 2 0 012-2z"/>
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 11h18"/>
                   </svg>

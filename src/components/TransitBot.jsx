@@ -80,18 +80,25 @@ export default function TransitBot() {
 
   const handleOpenWhatsApp = () => {
     setIsOpen(false);
-    const phone = WHATSAPP_PHONE;
+    let phone = WHATSAPP_PHONE;
+    try {
+      const saved = JSON.parse(localStorage.getItem('transitflow_platform_settings') || '{}');
+      if (saved.phone) {
+        const cleaned = saved.phone.replace(/\D/g, '');
+        if (cleaned.length >= 8) phone = cleaned;
+      }
+    } catch {}
     const text = encodeURIComponent(WHATSAPP_MESSAGE);
     window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 no-print font-sans">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 no-print font-sans max-w-[calc(100vw-32px)]">
       {/* Support Popover Menu */}
       {isOpen && (
-        <div className="bg-stone-900 border border-stone-850 rounded-2xl w-80 sm:w-[360px] shadow-2xl flex flex-col overflow-hidden mb-4 transition-all duration-300 animate-in fade-in slide-in-from-bottom-5">
+        <div className="bg-stone-900 border border-stone-850 rounded-2xl w-[calc(100vw-32px)] max-w-xs sm:w-[360px] shadow-2xl flex flex-col overflow-hidden mb-4 transition-all duration-300 animate-in fade-in slide-in-from-bottom-5">
           {/* Header */}
-          <div className="bg-gradient-to-r from-amber-500 to-amber-600 p-4 text-stone-950 flex items-center justify-between">
+          <div className="bg-gradient-to-r from-red-500 to-red-600 p-4 text-stone-950 flex items-center justify-between">
             <div className="flex items-center space-x-2.5">
               <div className="bg-stone-950/10 p-1.5 rounded-lg">
                 <Headphones className="h-5 w-5 animate-pulse" />
@@ -117,20 +124,20 @@ export default function TransitBot() {
             {/* Live Chat Option */}
             <button
               onClick={handleOpenTawk}
-              className="w-full text-left bg-stone-850 hover:bg-stone-800 border border-stone-800 hover:border-amber-500/30 rounded-xl p-3.5 flex items-center gap-3.5 transition-all duration-200 group"
+              className="w-full text-left bg-stone-850 hover:bg-stone-800 border border-stone-800 hover:border-red-500/30 rounded-xl p-3.5 flex items-center gap-3.5 transition-all duration-200 group"
             >
-              <div className="bg-amber-500/10 text-amber-500 p-2.5 rounded-xl group-hover:bg-amber-500 group-hover:text-stone-950 transition-all duration-200">
+              <div className="bg-red-500/10 text-red-500 p-2.5 rounded-xl group-hover:bg-red-500 group-hover:text-stone-950 transition-all duration-200">
                 <Bot className="h-5 w-5" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-white text-xs font-bold tracking-wide group-hover:text-amber-400 transition-colors">
+                <p className="text-white text-xs font-bold tracking-wide group-hover:text-red-400 transition-colors">
                   {t('bot.liveChat')}
                 </p>
                 <p className="text-[10px] text-stone-400 mt-0.5 truncate">
                   {t('bot.liveChatDesc')}
                 </p>
               </div>
-              <ChevronRight className="h-4 w-4 text-stone-500 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all" />
+              <ChevronRight className="h-4 w-4 text-stone-500 group-hover:text-red-500 group-hover:translate-x-0.5 transition-all" />
             </button>
 
             {/* WhatsApp Option */}
@@ -161,7 +168,7 @@ export default function TransitBot() {
           setIsOpen(!isOpen);
           setUnread(false);
         }}
-        className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 px-5 py-3.5 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-2.5 font-bold text-sm relative"
+        className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-stone-950 px-5 py-3.5 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-2.5 font-bold text-sm relative"
         title="Chat Support"
       >
         <MessageSquare className="h-5 w-5" />

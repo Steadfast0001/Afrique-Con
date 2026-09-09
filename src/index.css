@@ -8,6 +8,16 @@
   * {
     box-sizing: border-box;
   }
+  html,
+  body,
+  #root {
+    overflow-x: hidden;
+    max-width: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
   body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -47,9 +57,51 @@
   transition: opacity 200ms, transform 200ms;
 }
 
-/* Print styles for ticket */
+/* Print styles for A4 sheet with 20.00cm x 4.78cm slips (6 per A4 page) */
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 5mm;
+  }
+  
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    width: 200mm !important;
+  }
+
   .no-print {
     display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .a4-page-sheet {
+    width: 200mm !important;
+    max-width: 200mm !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    background: white !important;
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  .boarding-slip-20x478 {
+    width: 200mm !important;
+    height: 47.8mm !important;
+    min-height: 47.8mm !important;
+    max-height: 47.8mm !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin: 0 auto !important;
+    box-shadow: none !important;
+    border: 1px dashed #cbd5e1 !important;
+    border-radius: 4px !important;
+    overflow: hidden !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }

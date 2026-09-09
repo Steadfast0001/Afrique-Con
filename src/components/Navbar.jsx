@@ -7,7 +7,7 @@ import { useLanguage } from '../context/LanguageContext';
 function TransitHubLogo() {
   return (
     <div className="flex items-center gap-2.5">
-      <div className="w-9 h-9 bg-amber-500 rounded-xl flex items-center justify-center">
+      <div className="w-9 h-9 bg-red-500 rounded-xl flex items-center justify-center">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
           <path d="M4 16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H6c-1.1 0-2 .9-2 2v8z" fill="#1a1a1a"/>
           <path d="M7 18v2M17 18v2M4 12h16" stroke="#1a1a1a" strokeWidth="1.5" strokeLinecap="round"/>
@@ -39,7 +39,7 @@ export default function Navbar() {
   const navLinkClass = (path) =>
     `px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
       isActive(path)
-        ? 'bg-white/10 text-amber-400'
+        ? 'bg-white/10 text-red-400'
         : 'text-gray-300 hover:text-white'
     }`;
 
@@ -68,7 +68,7 @@ export default function Navbar() {
                 onClick={() => setLangOpen(!langOpen)}
                 className="flex items-center gap-1.5 text-gray-300 hover:text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-white/5 focus:outline-none"
               >
-                <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 002 2h2a2.5 2.5 0 002.5-2.5V10a2 2 0 00-2-2h-1.5a2 2 0 01-2-2V4.305M9.9 22.181A9 9 0 1120.1 5.82a9 9 0 01-10.2 16.361z"/>
                 </svg>
                 <span className="uppercase text-xs font-bold">{language}</span>
@@ -82,24 +82,24 @@ export default function Navbar() {
                   <div className="absolute right-0 mt-2 w-32 bg-stone-900 border border-stone-850 rounded-xl shadow-xl z-20 py-1 overflow-hidden">
                     <button
                       onClick={() => { setLanguage('en'); setLangOpen(false); }}
-                      className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-white/5 transition-colors flex items-center justify-between ${language === 'en' ? 'text-amber-400' : 'text-gray-300 hover:text-white'}`}
+                      className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-white/5 transition-colors flex items-center justify-between ${language === 'en' ? 'text-red-400' : 'text-gray-300 hover:text-white'}`}
                     >
                       <span>English</span>
-                      {language === 'en' && <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>}
+                      {language === 'en' && <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>}
                     </button>
                     <button
                       onClick={() => { setLanguage('fr'); setLangOpen(false); }}
-                      className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-white/5 transition-colors flex items-center justify-between ${language === 'fr' ? 'text-amber-400' : 'text-gray-300 hover:text-white'}`}
+                      className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-white/5 transition-colors flex items-center justify-between ${language === 'fr' ? 'text-red-400' : 'text-gray-300 hover:text-white'}`}
                     >
                       <span>Français</span>
-                      {language === 'fr' && <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>}
+                      {language === 'fr' && <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>}
                     </button>
                     <button
                       onClick={() => { setLanguage('pcm'); setLangOpen(false); }}
-                      className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-white/5 transition-colors flex items-center justify-between ${language === 'pcm' ? 'text-amber-400' : 'text-gray-300 hover:text-white'}`}
+                      className={`w-full text-left px-4 py-2 text-xs font-semibold hover:bg-white/5 transition-colors flex items-center justify-between ${language === 'pcm' ? 'text-red-400' : 'text-gray-300 hover:text-white'}`}
                     >
                       <span>Pidgin</span>
-                      {language === 'pcm' && <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>}
+                      {language === 'pcm' && <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>}
                     </button>
                   </div>
                 </>
@@ -111,7 +111,7 @@ export default function Navbar() {
                 {currentUser.role === 'admin' && (
                   <Link
                     to="/admin"
-                    className="text-sm font-medium text-amber-400 hover:text-amber-300 transition-colors mr-1"
+                    className="text-sm font-medium text-red-400 hover:text-red-300 transition-colors mr-1"
                   >
                     {t('nav.staffConsole')}
                   </Link>
@@ -134,7 +134,7 @@ export default function Navbar() {
                 </Link>
                 <Link
                   to="/register"
-                  className="bg-amber-500 hover:bg-amber-400 text-gray-900 text-sm font-bold px-5 py-2 rounded-lg transition-colors"
+                  className="bg-red-500 hover:bg-red-600 text-white text-sm font-bold px-5 py-2 rounded-lg transition-colors"
                 >
                   {t('nav.register')}
                 </Link>
@@ -176,7 +176,7 @@ export default function Navbar() {
                 <button
                   key={l.code}
                   onClick={() => setLanguage(l.code)}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${language === l.code ? 'bg-amber-500 text-gray-900' : 'bg-stone-800 text-gray-300 hover:text-white'}`}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${language === l.code ? 'bg-red-500 text-white' : 'bg-stone-800 text-gray-300 hover:text-white'}`}
                 >
                   {l.label}
                 </button>
@@ -188,7 +188,7 @@ export default function Navbar() {
             {currentUser ? (
               <div className="flex flex-col gap-2 w-full">
                 {currentUser.role === 'admin' && (
-                  <Link to="/admin" onClick={() => setMobileOpen(false)} className="text-amber-400 hover:text-amber-300 text-sm font-medium">
+                  <Link to="/admin" onClick={() => setMobileOpen(false)} className="text-red-400 hover:text-red-300 text-sm font-medium">
                     {t('nav.staffConsole')}
                   </Link>
                 )}
@@ -202,7 +202,7 @@ export default function Navbar() {
                 <Link to="/login" onClick={() => setMobileOpen(false)} className="text-gray-300 hover:text-white text-sm font-medium flex-1 text-center py-1.5 border border-stone-800 rounded-lg">
                   {t('nav.signIn')}
                 </Link>
-                <Link to="/register" onClick={() => setMobileOpen(false)} className="bg-amber-500 hover:bg-amber-400 text-gray-900 text-sm font-bold px-4 py-1.5 rounded-lg flex-1 text-center">
+                <Link to="/register" onClick={() => setMobileOpen(false)} className="bg-red-500 hover:bg-red-600 text-white text-sm font-bold px-4 py-1.5 rounded-lg flex-1 text-center">
                   {t('nav.register')}
                 </Link>
               </>

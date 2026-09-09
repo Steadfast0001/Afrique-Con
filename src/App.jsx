@@ -23,9 +23,9 @@ import TransitBot from './components/TransitBot';
 // Standard User Layout: Navbar on top, page content below
 function UserLayout() {
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 text-gray-900">
+    <div className="min-h-screen flex flex-col bg-gray-50 text-gray-900 overflow-x-hidden w-full max-w-full">
       <Navbar />
-      <main className="flex-1">
+      <main className="flex-1 overflow-x-hidden w-full max-w-full">
         <Outlet />
       </main>
       <TransitBot />

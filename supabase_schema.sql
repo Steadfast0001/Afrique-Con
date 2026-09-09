@@ -19,7 +19,10 @@ begin
     new.id,
     coalesce(new.raw_user_meta_data->>'name', split_part(new.email, '@', 1)),
     new.email,
-    coalesce(new.raw_user_meta_data->>'role', 'passenger')
+    case
+      when lower(new.email) in ('nkengsteadbeks@gmail.com', 'admin@transitflow.com') then 'admin'
+      else coalesce(new.raw_user_meta_data->>'role', 'passenger')
+    end
   );
   return new;
 end;
@@ -89,6 +92,38 @@ create table public.bookings (
   passengers jsonb -- Detailed JSON passenger list: [{seat, name, passport}]
 );
 
+-- 5.1 Anti-Double-Booking Trigger Function (ACID Concurrency Protection)
+create or replace function public.prevent_seat_double_booking()
+returns trigger as $$
+declare
+  conflict_seat text;
+begin
+  -- Search for overlapping active seat reservations on this departure schedule
+  select s into conflict_seat
+  from (
+    select unnest(seats) as s
+    from public.bookings
+    where schedule_id = new.schedule_id
+      and check_in_status != 'Cancelled'
+      and id != new.id
+  ) booked
+  where booked.s = any(new.seats)
+  limit 1;
+
+  if conflict_seat is not null then
+    raise exception 'SEAT_ALREADY_BOOKED: Seat % is already reserved for this departure schedule.', conflict_seat;
+  end if;
+
+  return new;
+end;
+$$ language plpgsql;
+
+drop trigger if exists trg_prevent_seat_double_booking on public.bookings;
+create trigger trg_prevent_seat_double_booking
+  before insert or update of seats, schedule_id, check_in_status on public.bookings
+  for each row execute function public.prevent_seat_double_booking();
+
+
 
 -- 6. Support Tickets Table
 create table public.support_tickets (
@@ -108,13 +143,112 @@ alter table public.schedules enable row level security;
 alter table public.bookings enable row level security;
 alter table public.support_tickets enable row level security;
 
--- Create basic access policies
-create policy "Allow public read access to buses" on public.buses for select using (true);
-create policy "Allow public read access to routes" on public.routes for select using (true);
-create policy "Allow public read access to schedules" on public.schedules for select using (true);
+-- Helper function to verify Admin privilege
+create or replace function public.is_admin()
+returns boolean as $$
+begin
+  return (
+    lower(coalesce(auth.jwt() ->> 'email', '')) in ('nkengsteadbeks@gmail.com', 'admin@transitflow.com')
+    or exists (
+      select 1 from public.profiles 
+      where profiles.id = auth.uid() and profiles.role = 'admin'
+    )
+  );
+end;
+$$ language plpgsql security definer;
 
-create policy "Allow users to read their own profile" on public.profiles for select using (auth.uid() = id);
-create policy "Allow users to read their own bookings" on public.bookings for select using (auth.uid() = user_id or passenger_email = auth.email());
-create policy "Allow users to create bookings" on public.bookings for insert with check (true);
-create policy "Allow users to read their own support tickets" on public.support_tickets for select using (auth.uid() = user_id);
-create policy "Allow users to create support tickets" on public.support_tickets for insert with check (auth.uid() = user_id);
+-- 1. Buses Policies: Public read, Admin write
+drop policy if exists "Allow public read access to buses" on public.buses;
+drop policy if exists "Admin only manage buses" on public.buses;
+drop policy if exists "Allow all access to buses" on public.buses;
+
+create policy "Allow public read access to buses" 
+  on public.buses for select using (true);
+
+create policy "Admin only manage buses" 
+  on public.buses for all 
+  using (public.is_admin()) 
+  with check (public.is_admin());
+
+-- 2. Routes Policies: Public read, Admin write
+drop policy if exists "Allow public read access to routes" on public.routes;
+drop policy if exists "Admin only manage routes" on public.routes;
+drop policy if exists "Allow all access to routes" on public.routes;
+
+create policy "Allow public read access to routes" 
+  on public.routes for select using (true);
+
+create policy "Admin only manage routes" 
+  on public.routes for all 
+  using (public.is_admin()) 
+  with check (public.is_admin());
+
+-- 3. Schedules Policies: Public read, Admin write
+drop policy if exists "Allow public read access to schedules" on public.schedules;
+drop policy if exists "Admin only manage schedules" on public.schedules;
+drop policy if exists "Allow all access to schedules" on public.schedules;
+
+create policy "Allow public read access to schedules" 
+  on public.schedules for select using (true);
+
+create policy "Admin only manage schedules" 
+  on public.schedules for all 
+  using (public.is_admin()) 
+  with check (public.is_admin());
+
+-- 4. Bookings Policies: Public can create, Passengers view own, Admins manage all
+drop policy if exists "Allow users to read and manage bookings" on public.bookings;
+drop policy if exists "Allow all access to bookings" on public.bookings;
+drop policy if exists "Allow public to create bookings" on public.bookings;
+drop policy if exists "Allow users and admins to view bookings" on public.bookings;
+drop policy if exists "Allow admins to manage all bookings" on public.bookings;
+
+create policy "Allow public to create bookings" 
+  on public.bookings for insert with check (true);
+
+create policy "Allow users and admins to view bookings" 
+  on public.bookings for select 
+  using (
+    public.is_admin() 
+    or auth.uid() = user_id 
+    or passenger_email = (auth.jwt() ->> 'email')
+    or user_id is null
+  );
+
+create policy "Allow admins to manage all bookings" 
+  on public.bookings for update 
+  using (public.is_admin() or auth.uid() = user_id)
+  with check (public.is_admin() or auth.uid() = user_id);
+
+-- 5. Profiles Policies: Users manage own profile, Admins view all
+drop policy if exists "Allow users to read and update their own profile" on public.profiles;
+drop policy if exists "Allow all access to profiles" on public.profiles;
+drop policy if exists "Allow users and admins to view profiles" on public.profiles;
+drop policy if exists "Allow users to update own profile" on public.profiles;
+
+create policy "Allow users and admins to view profiles" 
+  on public.profiles for select 
+  using (public.is_admin() or auth.uid() = id);
+
+create policy "Allow users to update own profile" 
+  on public.profiles for update 
+  using (auth.uid() = id) with check (auth.uid() = id);
+
+-- 6. Support Tickets Policies: Public create, Users view own, Admins manage all
+drop policy if exists "Allow users to read and create support tickets" on public.support_tickets;
+drop policy if exists "Allow all access to support_tickets" on public.support_tickets;
+drop policy if exists "Allow public and users to create tickets" on public.support_tickets;
+drop policy if exists "Allow users and admins to view tickets" on public.support_tickets;
+drop policy if exists "Allow admins to update tickets" on public.support_tickets;
+
+create policy "Allow public and users to create tickets" 
+  on public.support_tickets for insert with check (true);
+
+create policy "Allow users and admins to view tickets" 
+  on public.support_tickets for select 
+  using (public.is_admin() or auth.uid() = user_id);
+
+create policy "Allow admins to update tickets" 
+  on public.support_tickets for update 
+  using (public.is_admin()) with check (public.is_admin());
+

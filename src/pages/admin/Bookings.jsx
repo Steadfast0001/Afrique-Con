@@ -30,7 +30,7 @@ export default function AdminBookings() {
               key={f}
               onClick={() => setFilter(f)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-colors ${
-                filter === f ? 'bg-amber-500 text-gray-900' : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-50'
+                filter === f ? 'bg-red-500 text-white' : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-50'
               }`}
             >
               {f}
@@ -60,7 +60,7 @@ export default function AdminBookings() {
                 const { schedule, route } = getTripDetails(booking.scheduleId);
                 return (
                   <tr key={booking.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 font-mono font-bold text-amber-600 text-xs">{booking.id}</td>
+                    <td className="px-6 py-4 font-mono font-bold text-red-600 text-xs">{booking.id}</td>
                     <td className="px-6 py-4">
                       <p className="font-semibold text-gray-900">{booking.passengerName}</p>
                       <p className="text-gray-400 text-xs">{booking.phone}</p>
@@ -72,7 +72,7 @@ export default function AdminBookings() {
                     <td className="px-6 py-4">
                       <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
                         booking.travelClass === 'Gold' 
-                          ? 'bg-amber-50 text-amber-700 border border-amber-200' 
+                          ? 'bg-red-50 text-red-700 border border-red-200' 
                           : 'bg-gray-100 text-gray-600 border border-gray-200'
                       }`}>
                         {booking.travelClass || 'Silver'}
@@ -85,7 +85,7 @@ export default function AdminBookings() {
                       <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                         booking.paymentStatus === 'Paid' || booking.paymentStatus === 'paid'
                           ? 'bg-green-50 text-green-700 border border-green-200'
-                          : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+                          : 'bg-red-50 text-red-700 border border-red-200'
                       }`}>
                         {booking.paymentStatus || 'pending'}
                       </span>

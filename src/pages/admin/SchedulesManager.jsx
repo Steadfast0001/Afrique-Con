@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { isNigeriaDestination, isTuesdayOrFriday } from '../../context/FleetContext';
 
 export default function SchedulesManager() {
   const { schedules, routes, buses, addSchedule, deleteSchedule, updateSchedule } = useApp();
@@ -9,9 +10,18 @@ export default function SchedulesManager() {
   });
   const [error, setError] = useState('');
 
+  const selectedRoute = routes.find(r => r.id === newSchedule.routeId);
+  const isNigeriaRoute = selectedRoute && isNigeriaDestination(selectedRoute.destination);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!newSchedule.routeId || !newSchedule.busId) { setError('Please select both a route and a bus.'); return; }
+    
+    if (isNigeriaRoute && !isTuesdayOrFriday(newSchedule.departureDate)) {
+      setError('Direct bus lines from Cameroon to Nigeria depart strictly on Tuesdays and Fridays only.');
+      return;
+    }
+
     try {
       await addSchedule({ ...newSchedule });
       setNewSchedule({ routeId: '', busId: '', departureDate: new Date().toISOString().split('T')[0], departureTime: '08:00', arrivalTime: '12:00' });
@@ -48,7 +58,7 @@ export default function SchedulesManager() {
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold px-5 py-2.5 rounded-xl text-sm transition-colors"
+          className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4"/>
@@ -61,42 +71,53 @@ export default function SchedulesManager() {
       {showForm && (
         <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
           <h3 className="font-bold text-gray-900 mb-4">New Departure Schedule</h3>
+          
+          {isNigeriaRoute && (
+            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center gap-2 font-medium">
+              <span className="font-bold">⚠️ Nigeria Service Rule:</span> Direct bus lines from Cameroon to Nigeria only operate on <strong>Tuesdays</strong> and <strong>Fridays</strong>.
+            </div>
+          )}
+
           {error && <p className="text-red-400 text-sm mb-3 bg-red-500/5 border border-red-500/20 rounded-lg px-3 py-2">{error}</p>}
           <form onSubmit={handleSubmit} className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             <div className="col-span-2 sm:col-span-1">
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Route</label>
               <select value={newSchedule.routeId} onChange={e => { setNewSchedule(p => ({...p, routeId: e.target.value})); setError(''); }}
-                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400">
+                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400">
                 <option value="" className="bg-white text-gray-900">Select route...</option>
-                {routes.map(r => <option key={r.id} value={r.id} className="bg-white text-gray-900">{r.origin} → {r.destination}</option>)}
+                {routes.map(r => (
+                  <option key={r.id} value={r.id} className="bg-white text-gray-900">
+                    {r.origin} → {r.destination} {isNigeriaDestination(r.destination) ? '(Tue & Fri Only)' : ''}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Assigned Bus</label>
               <select value={newSchedule.busId} onChange={e => { setNewSchedule(p => ({...p, busId: e.target.value})); setError(''); }}
-                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400">
+                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400">
                 <option value="" className="bg-white text-gray-900">Select bus...</option>
                 {buses.filter(b => b.status === 'Active').map(b => <option key={b.id} value={b.id} className="bg-white text-gray-900">{b.plate || b.name} ({b.capacity} seats)</option>)}
               </select>
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Departure Date</label>
-              <input type="date" value={newSchedule.departureDate} onChange={e => setNewSchedule(p => ({...p, departureDate: e.target.value}))}
-                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400"/>
+              <input type="date" value={newSchedule.departureDate} onChange={e => { setNewSchedule(p => ({...p, departureDate: e.target.value})); setError(''); }}
+                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400"/>
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Departure Time</label>
               <input type="time" value={newSchedule.departureTime} onChange={e => setNewSchedule(p => ({...p, departureTime: e.target.value}))}
-                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400"/>
+                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400"/>
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Arrival Time</label>
               <input type="time" value={newSchedule.arrivalTime} onChange={e => setNewSchedule(p => ({...p, arrivalTime: e.target.value}))}
-                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400"/>
+                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400"/>
             </div>
             <div className="col-span-2 sm:col-span-3 flex gap-3 justify-end pt-1">
               <button type="button" onClick={() => setShowForm(false)} className="text-gray-500 hover:text-gray-600 text-sm font-medium px-4 py-2 transition-colors">Cancel</button>
-              <button type="submit" className="bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold px-5 py-2 rounded-xl text-sm transition-colors">Create Schedule</button>
+              <button type="submit" className="bg-red-500 hover:bg-red-600 text-white font-bold px-5 py-2 rounded-xl text-sm transition-colors">Create Schedule</button>
             </div>
           </form>
         </div>

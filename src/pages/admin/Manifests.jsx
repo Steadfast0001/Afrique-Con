@@ -21,7 +21,7 @@ export default function Manifests() {
   const getPassengerCount = (scheduleId) => {
     return bookings
       .filter(b => b.scheduleId === scheduleId && b.checkInStatus !== 'Cancelled')
-      .reduce((sum, b) => sum + b.seats.length, 0);
+      .reduce((sum, b) => sum + (Array.isArray(b.seats) ? b.seats.length : (b.seats ? 1 : 0)), 0);
   };
 
   return (
@@ -49,7 +49,7 @@ export default function Manifests() {
                 <button
                   key={schedule.id}
                   onClick={() => setSelectedScheduleId(schedule.id)}
-                  className={`w-full text-left px-4 py-4 hover:bg-gray-50 transition-colors ${selectedScheduleId === schedule.id ? 'bg-amber-500/10 border-l-2 border-amber-500' : ''}`}
+                  className={`w-full text-left px-4 py-4 hover:bg-gray-50 transition-colors ${selectedScheduleId === schedule.id ? 'bg-red-500/10 border-l-2 border-red-500' : ''}`}
                 >
                   <div className="flex items-start justify-between">
                     <p className="font-semibold text-gray-900 text-sm">
@@ -106,7 +106,7 @@ export default function Manifests() {
                 </div>
                 <button
                   onClick={() => window.print()}
-                  className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold px-4 py-2 rounded-xl text-sm transition-colors"
+                  className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2 rounded-xl text-sm transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
@@ -139,7 +139,7 @@ export default function Manifests() {
                         <td className="px-6 py-3.5">
                           <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
                             b.travelClass === 'Gold' 
-                              ? 'bg-amber-50 text-amber-700 border border-amber-200' 
+                              ? 'bg-red-50 text-red-700 border border-red-200' 
                               : 'bg-gray-50 text-gray-500 border border-gray-200'
                           }`}>
                             {b.travelClass || 'Silver'}

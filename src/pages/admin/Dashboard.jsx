@@ -58,7 +58,8 @@ export default function Dashboard() {
     const { route } = getTripDetails(b.scheduleId);
     if (route) {
       const key = `${route.origin} → ${route.destination}`;
-      routeBookingCounts[key] = (routeBookingCounts[key] || 0) + b.seats.length;
+      const seatCount = Array.isArray(b.seats) ? b.seats.length : (b.seats ? 1 : 0);
+      routeBookingCounts[key] = (routeBookingCounts[key] || 0) + seatCount;
     }
   });
   const topRoutes = Object.entries(routeBookingCounts).sort((a, b) => b[1] - a[1]).slice(0, 4);
@@ -70,8 +71,8 @@ export default function Dashboard() {
       {/* ===== STAT CARDS ===== */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard
-          iconBg="bg-amber-500/10 text-amber-400"
-          icon={<svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
+          iconBg="bg-red-500/10 text-red-400"
+          icon={<svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>}
           value={`${totalRevenue.toLocaleString()} FCFA`}
           label="Revenue (Paid)"
           sub="vs. last week"
@@ -143,8 +144,8 @@ export default function Dashboard() {
               {/* Area fill */}
               <defs>
                 <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.3"/>
-                  <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.02"/>
+                  <stop offset="0%" stopColor="#ef4444" stopOpacity="0.3"/>
+                  <stop offset="100%" stopColor="#ef4444" stopOpacity="0.02"/>
                 </linearGradient>
               </defs>
               {(() => {
@@ -162,7 +163,7 @@ export default function Dashboard() {
                     <polyline
                       points={polyline}
                       fill="none"
-                      stroke="#f59e0b"
+                      stroke="#ef4444"
                       strokeWidth="2.5"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -171,7 +172,7 @@ export default function Dashboard() {
                     {revenueData.map((v, i) => {
                       const x = pad + (i * (W - pad * 2)) / (revenueData.length - 1);
                       const y = H - (v / maxRevenue) * (H - 10) - 4;
-                      return <circle key={i} cx={x} cy={y} r="3.5" fill="#f59e0b" stroke="white" strokeWidth="2"/>;
+                      return <circle key={i} cx={x} cy={y} r="3.5" fill="#ef4444" stroke="white" strokeWidth="2"/>;
                     })}
                   </>
                 );
@@ -194,7 +195,7 @@ export default function Dashboard() {
             {topRoutes.length === 0 ? (
               <p className="text-gray-400 text-sm">No booking data yet.</p>
             ) : topRoutes.map(([route, count], i) => {
-              const colors = ['bg-amber-500', 'bg-teal-500', 'bg-blue-500', 'bg-purple-500'];
+              const colors = ['bg-red-500', 'bg-teal-500', 'bg-blue-500', 'bg-purple-500'];
               return (
                 <div key={route}>
                   <div className="flex justify-between text-xs mb-1">
@@ -218,7 +219,7 @@ export default function Dashboard() {
       <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <h3 className="text-gray-900 font-bold text-base">Recent Bookings</h3>
-          <button onClick={() => navigate('/admin/bookings')} className="text-amber-600 hover:text-amber-500 text-xs font-semibold transition-colors">
+          <button onClick={() => navigate('/admin/bookings')} className="text-red-600 hover:text-red-500 text-xs font-semibold transition-colors">
             View all →
           </button>
         </div>
@@ -240,7 +241,7 @@ export default function Dashboard() {
                 const { route } = getTripDetails(booking.scheduleId);
                 return (
                   <tr key={booking.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-3.5 font-mono font-bold text-amber-600 text-xs">{booking.id}</td>
+                    <td className="px-6 py-3.5 font-mono font-bold text-red-600 text-xs">{booking.id}</td>
                     <td className="px-6 py-3.5">
                       <p className="font-semibold text-gray-900 text-sm">{booking.passengerName}</p>
                       <p className="text-gray-400 text-xs">{booking.phone}</p>
@@ -251,7 +252,7 @@ export default function Dashboard() {
                     <td className="px-6 py-3.5">
                       <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
                         booking.travelClass === 'Gold' 
-                          ? 'bg-amber-50 text-amber-700 border border-amber-200' 
+                          ? 'bg-red-50 text-red-700 border border-red-200' 
                           : 'bg-gray-100 text-gray-600 border border-gray-200'
                       }`}>
                         {booking.travelClass || 'Silver'}
@@ -264,7 +265,7 @@ export default function Dashboard() {
                       <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                         booking.paymentStatus === 'Paid' || booking.paymentStatus === 'paid'
                           ? 'bg-green-50 text-green-700 border border-green-200'
-                          : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+                          : 'bg-red-50 text-red-700 border border-red-200'
                       }`}>
                         {booking.paymentStatus || 'pending'}
                       </span>

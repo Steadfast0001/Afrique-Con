@@ -1,0 +1,308 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase, isSupabaseConfigured } from './supabaseClient';
+import { useAuth } from './AuthContext';
+import { enqueueOfflineMutation } from '../utils/offlineQueue';
+
+const BookingContext = createContext();
+
+const isUUID = (str) => typeof str === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+
+const parseSeats = (seatsField) => {
+  if (Array.isArray(seatsField)) return seatsField.map(String);
+  if (typeof seatsField === 'string') {
+    try {
+      const parsed = JSON.parse(seatsField);
+      if (Array.isArray(parsed)) return parsed.map(String);
+    } catch {
+      return seatsField.split(',').map(s => s.trim()).filter(Boolean);
+    }
+  }
+  return [];
+};
+
+const parsePassengers = (pField) => {
+  if (Array.isArray(pField)) return pField;
+  if (typeof pField === 'string') {
+    try {
+      const parsed = JSON.parse(pField);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+};
+
+export function BookingProvider({ children }) {
+  const { currentUser } = useAuth();
+  const [bookings, setBookings] = useState([]);
+  const [supportTickets, setSupportTickets] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadBookingData = async () => {
+    if (!isSupabaseConfigured) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // 1. Fetch Bookings
+      const { data: bookData, error: bookErr } = await supabase.from('bookings').select('*');
+      if (bookErr) throw bookErr;
+
+      setBookings((bookData || []).map(b => ({
+        ...b,
+        id: String(b.id),
+        scheduleId: String(b.schedule_id || b.scheduleId || ''),
+        userId: b.user_id ? String(b.user_id) : null,
+        passengerName: String(b.passenger_name || b.passengerName || ''),
+        passengerEmail: String(b.passenger_email || b.passengerEmail || ''),
+        phone: String(b.phone || ''),
+        seats: parseSeats(b.seats),
+        travelClass: String(b.travel_class || b.travelClass || 'Gold VIP+'),
+        totalAmount: Number(b.total_amount ?? b.totalAmount) || 0,
+        paymentMethod: String(b.payment_method || b.paymentMethod || 'Mobile Money'),
+        paymentStatus: String(b.payment_status || b.paymentStatus || 'Paid'),
+        checkInStatus: String(b.check_in_status || b.checkInStatus || 'Pending'),
+        passportNumber: b.passport_number || b.passportNumber || null,
+        passengers: parsePassengers(b.passengers),
+        bookingDate: String(b.booking_date || b.bookingDate || new Date().toISOString())
+      })));
+
+      // 2. Fetch Support Tickets
+      const { data: supportData, error: supportErr } = await supabase.from('support_tickets').select('*');
+      if (supportErr) throw supportErr;
+
+      setSupportTickets((supportData || []).map(t => ({
+        ...t,
+        id: String(t.id),
+        userId: t.user_id ? String(t.user_id) : null,
+        customerName: String(t.customer_name || t.customerName || ''),
+        customerEmail: String(t.customer_email || t.customerEmail || ''),
+        subject: String(t.subject || ''),
+        message: String(t.message || ''),
+        status: String(t.status || 'open'),
+        date: String((t.created_at || '').split('T')[0] || new Date().toISOString().split('T')[0])
+      })));
+
+    } catch (err) {
+      console.error('Error fetching Booking data from Supabase:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadBookingData();
+  }, []);
+
+  // Booking Operations
+  const addBooking = async (bookingData) => {
+    const bookingId = 'bk-' + Math.floor(100000 + Math.random() * 900000);
+    const targetScheduleId = String(bookingData.scheduleId || '');
+    const normalizedSeats = parseSeats(bookingData.seats);
+
+    const dbPayload = {
+      id: bookingId,
+      schedule_id: isUUID(targetScheduleId) ? targetScheduleId : null,
+      user_id: isUUID(currentUser?.id) ? currentUser.id : null,
+      passenger_name: String(bookingData.passengerName || ''),
+      passenger_email: String(bookingData.passengerEmail || ''),
+      phone: String(bookingData.phone || ''),
+      seats: normalizedSeats,
+      travel_class: String(bookingData.travelClass || 'Gold VIP+'),
+      total_amount: Number(bookingData.totalAmount) || 0,
+      payment_method: String(bookingData.paymentMethod || 'Mobile Money'),
+      payment_status: String(bookingData.paymentStatus || 'Paid'),
+      check_in_status: String(bookingData.checkInStatus || 'Pending'),
+      passport_number: bookingData.passportNumber || null,
+      passengers: bookingData.passengers || null
+    };
+
+    if (isSupabaseConfigured && dbPayload.schedule_id) {
+      try {
+        const { data, error } = await supabase.from('bookings').insert(dbPayload).select().single();
+        if (error) {
+          if (error.message && (error.message.includes('SEAT_ALREADY_BOOKED') || error.message.includes('already reserved'))) {
+            throw new Error(error.message);
+          }
+          console.warn('Supabase addBooking warning, queueing offline mutation:', error.message);
+          enqueueOfflineMutation({ type: 'INSERT', table: 'bookings', payload: dbPayload });
+        } else if (data) {
+          const formatted = {
+            ...data,
+            id: String(data.id),
+            scheduleId: String(data.schedule_id),
+            userId: data.user_id ? String(data.user_id) : null,
+            passengerName: String(data.passenger_name),
+            passengerEmail: String(data.passenger_email),
+            phone: String(data.phone || ''),
+            seats: parseSeats(data.seats),
+            travelClass: String(data.travel_class),
+            totalAmount: Number(data.total_amount),
+            paymentMethod: String(data.payment_method),
+            paymentStatus: String(data.payment_status),
+            checkInStatus: String(data.check_in_status),
+            passportNumber: data.passport_number || null,
+            passengers: parsePassengers(data.passengers),
+            bookingDate: String(data.booking_date)
+          };
+          setBookings(prev => [formatted, ...prev]);
+          return formatted;
+        }
+      } catch (err) {
+        if (err.message && (err.message.includes('SEAT_ALREADY_BOOKED') || err.message.includes('already reserved'))) {
+          throw err;
+        }
+        console.warn('Supabase addBooking catch, queueing mutation:', err);
+        enqueueOfflineMutation({ type: 'INSERT', table: 'bookings', payload: dbPayload });
+      }
+    }
+
+    const localFormatted = {
+      id: bookingId,
+      scheduleId: targetScheduleId,
+      userId: currentUser ? String(currentUser.id) : null,
+      passengerName: String(bookingData.passengerName || ''),
+      passengerEmail: String(bookingData.passengerEmail || ''),
+      phone: String(bookingData.phone || ''),
+      seats: normalizedSeats,
+      travelClass: String(bookingData.travelClass || 'Gold VIP+'),
+      totalAmount: Number(bookingData.totalAmount) || 0,
+      paymentMethod: String(bookingData.paymentMethod || 'Mobile Money'),
+      paymentStatus: String(bookingData.paymentStatus || 'Paid'),
+      checkInStatus: String(bookingData.checkInStatus || 'Pending'),
+      passportNumber: bookingData.passportNumber || null,
+      passengers: parsePassengers(bookingData.passengers),
+      bookingDate: new Date().toISOString()
+    };
+
+    setBookings(prev => [localFormatted, ...prev]);
+    return localFormatted;
+  };
+
+  const cancelBooking = async (bookingId) => {
+    if (isSupabaseConfigured) {
+      try {
+        await supabase
+          .from('bookings')
+          .update({ check_in_status: 'Cancelled', payment_status: 'Refunded' })
+          .eq('id', bookingId);
+      } catch (err) {
+        enqueueOfflineMutation({
+          type: 'UPDATE',
+          table: 'bookings',
+          payload: { check_in_status: 'Cancelled', payment_status: 'Refunded' },
+          match: { id: bookingId }
+        });
+      }
+    }
+
+    setBookings(prev => prev.map(bk =>
+      bk.id === bookingId
+        ? { ...bk, checkInStatus: 'Cancelled', paymentStatus: 'Refunded' }
+        : bk
+    ));
+  };
+
+  const toggleCheckIn = async (bookingId) => {
+    const booking = bookings.find(b => b.id === bookingId);
+    if (!booking) return;
+
+    const nextStatus = booking.checkInStatus === 'Pending' ? 'Checked-In' : 'Pending';
+
+    if (isSupabaseConfigured) {
+      try {
+        await supabase
+          .from('bookings')
+          .update({ check_in_status: nextStatus })
+          .eq('id', bookingId);
+      } catch (err) {
+        enqueueOfflineMutation({
+          type: 'UPDATE',
+          table: 'bookings',
+          payload: { check_in_status: nextStatus },
+          match: { id: bookingId }
+        });
+      }
+    }
+
+    setBookings(prev => prev.map(b =>
+      b.id === bookingId ? { ...b, checkInStatus: nextStatus } : b
+    ));
+  };
+
+  // Support Operations
+  const addSupportTicket = async (subject, message) => {
+    const payload = {
+      user_id: isUUID(currentUser?.id) ? currentUser.id : null,
+      subject,
+      message,
+      status: 'Open'
+    };
+
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase.from('support_tickets').insert(payload).select().single();
+        if (!error && data) {
+          const formatted = {
+            ...data,
+            userId: data.user_id,
+            date: data.created_at.split('T')[0]
+          };
+          setSupportTickets(prev => [formatted, ...prev]);
+          return formatted;
+        }
+      } catch (err) {
+        enqueueOfflineMutation({ type: 'INSERT', table: 'support_tickets', payload });
+      }
+    }
+
+    const localTicket = {
+      id: `ticket-${Date.now()}`,
+      userId: currentUser ? currentUser.id : null,
+      subject,
+      message,
+      status: 'Open',
+      date: new Date().toISOString().split('T')[0],
+      created_at: new Date().toISOString()
+    };
+    setSupportTickets(prev => [localTicket, ...prev]);
+    return localTicket;
+  };
+
+  const updateTicketStatus = async (ticketId, status) => {
+    if (isSupabaseConfigured && isUUID(ticketId)) {
+      try {
+        const { error } = await supabase.from('support_tickets').update({ status }).eq('id', ticketId);
+        if (error) throw error;
+      } catch (err) {
+        console.warn('Update ticket error, queueing offline mutation:', err);
+        enqueueOfflineMutation({ type: 'UPDATE', table: 'support_tickets', payload: { status }, match: { id: ticketId } });
+      }
+    }
+    setSupportTickets(prev => prev.map(t => t.id === ticketId ? { ...t, status } : t));
+  };
+
+  return (
+    <BookingContext.Provider
+      value={{
+        bookings,
+        supportTickets,
+        loading,
+        addBooking,
+        cancelBooking,
+        toggleCheckIn,
+        addSupportTicket,
+        updateTicketStatus,
+        loadBookingData
+      }}
+    >
+      {children}
+    </BookingContext.Provider>
+  );
+}
+
+export function useBooking() {
+  return useContext(BookingContext);
+}

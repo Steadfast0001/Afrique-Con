@@ -62,7 +62,7 @@ export default function AgentConsole() {
         </div>
         <button
           onClick={() => setShowWalkInForm(true)}
-          className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold px-5 py-2.5 rounded-xl text-sm transition-colors"
+          className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
@@ -81,8 +81,8 @@ export default function AgentConsole() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         {[
           {
-            icon: <svg className="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" strokeWidth={2}/><path strokeLinecap="round" strokeWidth={2} d="M16 2l-4 5-4-5M8 14l2 2 4-4"/></svg>,
-            iconBg: 'bg-amber-500/10',
+            icon: <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" strokeWidth={2}/><path strokeLinecap="round" strokeWidth={2} d="M16 2l-4 5-4-5M8 14l2 2 4-4"/></svg>,
+            iconBg: 'bg-red-500/10',
             value: agentBookings.length,
             label: 'Agent Bookings',
           },
@@ -111,8 +111,8 @@ export default function AgentConsole() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         {[
           {
-            icon: <svg className="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>,
-            iconBg: 'bg-amber-500/10',
+            icon: <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>,
+            iconBg: 'bg-red-500/10',
             label: 'Prepare Manifest',
             desc: 'Export border manifests for drivers',
             to: '/admin/manifests',
@@ -156,7 +156,7 @@ export default function AgentConsole() {
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Trip / Schedule</label>
                 <select value={form.scheduleId} onChange={e => setForm(p => ({...p, scheduleId: e.target.value}))}
-                  className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400">
+                  className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400">
                   <option value="" className="bg-white text-gray-900">Select trip...</option>
                   {schedules.map(s => {
                     const { route } = getRoute(s.id);
@@ -167,23 +167,23 @@ export default function AgentConsole() {
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Passenger Name</label>
                 <input type="text" value={form.passengerName} onChange={e => setForm(p => ({...p, passengerName: e.target.value}))}
-                  placeholder="Full name" className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400 placeholder-stone-600"/>
+                  placeholder="e.g. Steady Beks" className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400 placeholder-stone-600"/>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Phone</label>
                 <input type="tel" value={form.phone} onChange={e => setForm(p => ({...p, phone: e.target.value}))}
-                  placeholder="+237 6 XX XX XX XX" className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400 placeholder-stone-600"/>
+                  placeholder="+237 6 XX XX XX XX" className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400 placeholder-stone-600"/>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Seats</label>
                   <input type="number" min="1" max="10" value={form.seats} onChange={e => setForm(p => ({...p, seats: e.target.value}))}
-                    className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400"/>
+                    className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400"/>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Class</label>
                   <select value={form.travelClass} onChange={e => setForm(p => ({...p, travelClass: e.target.value}))}
-                    className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400">
+                    className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400">
                     <option className="bg-white text-gray-900">Silver</option>
                     <option className="bg-white text-gray-900">Gold</option>
                   </select>
@@ -191,7 +191,7 @@ export default function AgentConsole() {
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Payment</label>
                   <select value={form.paymentMethod} onChange={e => setForm(p => ({...p, paymentMethod: e.target.value}))}
-                    className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400">
+                    className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400">
                     <option className="bg-white text-gray-900">Cash</option>
                     <option className="bg-white text-gray-900">MTN MoMo</option>
                     <option className="bg-white text-gray-900">Orange Money</option>
@@ -201,7 +201,7 @@ export default function AgentConsole() {
               {msg && !msg.startsWith('✓') && <p className="text-red-400 text-sm bg-red-500/5 border border-red-500/20 px-3 py-2 rounded-lg">{msg}</p>}
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowWalkInForm(false)} className="flex-1 border border-gray-200 text-gray-500 hover:bg-gray-50 font-semibold py-2.5 rounded-xl text-sm transition-colors">Cancel</button>
-                <button type="submit" className="flex-1 bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold py-2.5 rounded-xl text-sm transition-colors">Create Booking</button>
+                <button type="submit" className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 rounded-xl text-sm transition-colors">Create Booking</button>
               </div>
             </form>
           </div>
@@ -221,8 +221,8 @@ export default function AgentConsole() {
               const { route, schedule } = getRoute(booking.scheduleId);
               return (
                 <div key={booking.id} className="px-6 py-4 flex items-center gap-4 hover:bg-gray-50/10 transition-colors">
-                  <div className="w-9 h-9 bg-amber-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4.5 h-4.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-9 h-9 bg-red-500/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <svg className="w-4.5 h-4.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <rect x="2" y="7" width="20" height="14" rx="2" strokeWidth={2}/>
                     </svg>
                   </div>
@@ -236,7 +236,7 @@ export default function AgentConsole() {
                   </div>
                   <span className={`ml-4 px-2.5 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 ${
                     booking.travelClass === 'Gold' 
-                      ? 'bg-amber-50 text-amber-700 border border-amber-200' 
+                      ? 'bg-red-50 text-red-700 border border-red-200' 
                       : 'bg-gray-50 text-gray-500 border border-gray-200'
                   }`}>
                     {booking.travelClass || 'Silver'}

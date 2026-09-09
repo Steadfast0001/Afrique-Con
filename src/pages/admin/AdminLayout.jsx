@@ -88,7 +88,7 @@ export default function AdminLayout() {
           </div>
           <h3 className="text-gray-900 font-bold text-lg mb-2">Access Restricted</h3>
           <p className="text-gray-500 text-sm mb-6">Sign in as administrator to access the Operations Console.</p>
-          <Link to="/login" className="bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold px-6 py-2.5 rounded-xl text-sm transition-colors inline-block">Sign In</Link>
+          <Link to="/login" className="bg-red-500 hover:bg-red-600 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition-colors inline-block">Sign In</Link>
         </div>
       </div>
     );
@@ -106,7 +106,7 @@ export default function AdminLayout() {
 
   const linkClass = (path) => `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
     isActive(path)
-      ? 'bg-amber-500/20 text-amber-400'
+      ? 'bg-red-500/20 text-red-400'
       : 'text-stone-400 hover:text-stone-100 hover:bg-stone-800'
   }`;
 
@@ -119,7 +119,7 @@ export default function AdminLayout() {
         {/* Brand Header */}
         <div className="p-5 border-b border-stone-850">
           <div className="flex items-center gap-2.5 mb-0.5">
-            <div className="w-9 h-9 bg-amber-500 rounded-xl flex items-center justify-center flex-shrink-0">
+            <div className="w-9 h-9 bg-red-500 rounded-xl flex items-center justify-center flex-shrink-0">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                 <path d="M4 16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H6c-1.1 0-2 .9-2 2v8z" fill="#1a1a1a"/>
                 <path d="M7 18v2M17 18v2M4 12h16" stroke="#1a1a1a" strokeWidth="1.5" strokeLinecap="round"/>
@@ -178,7 +178,7 @@ export default function AdminLayout() {
         {/* User Info + Logout */}
         <div className="p-3 border-t border-stone-850">
           <div className="flex items-center gap-3 px-2 py-2">
-            <div className="w-9 h-9 rounded-full bg-amber-500 flex items-center justify-center text-gray-900 font-black text-sm flex-shrink-0">
+            <div className="w-9 h-9 rounded-full bg-red-500 flex items-center justify-center text-gray-900 font-black text-sm flex-shrink-0">
               {currentUser.name.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">

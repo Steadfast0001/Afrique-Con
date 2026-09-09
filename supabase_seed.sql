@@ -30,15 +30,15 @@ insert into public.routes (origin, destination, price, duration, distance, type,
 on conflict do nothing;
 
 -- 3. Dynamic PL/pgSQL calendar scheduling script
--- Generates daily departure trips from July 13th to July 30th, 2026
+-- Generates daily departure trips starting from today (current_date) for 14 days
 do $$
 declare
   r_id uuid;
   b_id uuid;
   d_date date;
 begin
-  -- Loop through dates
-  for d_date in select generate_series('2026-07-13'::date, '2026-07-30'::date, '1 day'::interval)::date loop
+  -- Loop through today and upcoming dates
+  for d_date in select generate_series(current_date, current_date + interval '14 days', '1 day'::interval)::date loop
     
     -- Trip 1: Douala -> Yaoundé (Morning, Silver)
     select id into r_id from public.routes where origin = 'Douala' and destination = 'Yaoundé' limit 1;

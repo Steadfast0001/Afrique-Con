@@ -34,7 +34,7 @@ export default function RoutesManager() {
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold px-5 py-2.5 rounded-xl text-sm transition-colors"
+          className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4"/>
@@ -53,18 +53,18 @@ export default function RoutesManager() {
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Origin City</label>
               <input type="text" placeholder="e.g. Yaoundé" value={newRoute.origin}
                 onChange={e => { setNewRoute(p => ({...p, origin: e.target.value})); setError(''); }}
-                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400 placeholder-stone-600"/>
+                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400 placeholder-stone-600"/>
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Destination City</label>
               <input type="text" placeholder="e.g. Douala" value={newRoute.destination}
                 onChange={e => { setNewRoute(p => ({...p, destination: e.target.value})); setError(''); }}
-                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400 placeholder-stone-600"/>
+                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400 placeholder-stone-600"/>
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Type</label>
               <select value={newRoute.type} onChange={e => setNewRoute(p => ({...p, type: e.target.value}))}
-                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400">
+                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400">
                 <option value="Inter-city" className="bg-white text-gray-900">Inter-city</option>
                 <option value="Cross-Border" className="bg-white text-gray-900">Cross-Border</option>
               </select>
@@ -73,23 +73,23 @@ export default function RoutesManager() {
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Silver Price (FCFA)</label>
               <input type="number" placeholder="e.g. 5000" value={newRoute.price}
                 onChange={e => { setNewRoute(p => ({...p, price: e.target.value})); setError(''); }}
-                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400 placeholder-stone-600"/>
+                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400 placeholder-stone-600"/>
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Duration</label>
               <input type="text" placeholder="e.g. 3h 30m" value={newRoute.duration}
                 onChange={e => setNewRoute(p => ({...p, duration: e.target.value}))}
-                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400 placeholder-stone-600"/>
+                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400 placeholder-stone-600"/>
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Distance</label>
               <input type="text" placeholder="e.g. 250 km" value={newRoute.distance}
                 onChange={e => setNewRoute(p => ({...p, distance: e.target.value}))}
-                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-400 placeholder-stone-600"/>
+                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400 placeholder-stone-600"/>
             </div>
             <div className="col-span-2 sm:col-span-3 flex gap-3 justify-end pt-1">
               <button type="button" onClick={() => setShowForm(false)} className="text-gray-500 hover:text-gray-600 text-sm font-medium px-4 py-2 transition-colors">Cancel</button>
-              <button type="submit" className="bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold px-5 py-2.5 rounded-xl text-sm transition-colors">Add Route</button>
+              <button type="submit" className="bg-red-500 hover:bg-red-600 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors">Add Route</button>
             </div>
           </form>
         </div>
@@ -128,7 +128,7 @@ export default function RoutesManager() {
                   <td className="px-6 py-4 text-gray-500">{route.duration}</td>
                   <td className="px-6 py-4 text-gray-500">{route.distance}</td>
                   <td className="px-6 py-4 font-bold text-gray-900">{(route.price || 0).toLocaleString()} FCFA</td>
-                  <td className="px-6 py-4 font-bold text-amber-600">{((route.price || 0) * 2.5).toLocaleString()} FCFA</td>
+                  <td className="px-6 py-4 font-bold text-red-600">{((route.price || 0) * 2.5).toLocaleString()} FCFA</td>
                   <td className="px-6 py-4 text-right">
                     <button
                       onClick={async () => {

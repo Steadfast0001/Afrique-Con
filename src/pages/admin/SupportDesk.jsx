@@ -31,7 +31,7 @@ export default function SupportDesk() {
             <div className="flex items-center gap-3 flex-shrink-0">
               <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
                 ticket.status === 'open' ? 'bg-red-50 text-red-600 border border-red-200'
-                : ticket.status === 'in-progress' ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                : ticket.status === 'in-progress' ? 'bg-red-50 text-red-700 border border-red-200'
                 : 'bg-green-50 text-green-700 border border-green-200'
               }`}>
                 {ticket.status}

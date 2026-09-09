@@ -14,8 +14,8 @@ export default function MyTrips() {
     return (
       <div className="max-w-7xl mx-auto px-4 py-24 flex flex-col items-center justify-center text-center">
         {/* Ticket Icon Wrapper */}
-        <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center border border-amber-200 mb-6 shadow-sm">
-          <Ticket className="w-8 h-8 text-amber-500" />
+        <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center border border-red-200 mb-6 shadow-sm">
+          <Ticket className="w-8 h-8 text-red-500" />
         </div>
         
         {/* Texts */}
@@ -34,7 +34,7 @@ export default function MyTrips() {
           </button>
           <button
             onClick={() => navigate('/register')}
-            className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-6 py-2.5 rounded-lg text-sm transition-all shadow-md active:scale-97"
+            className="bg-red-500 hover:bg-red-600 text-white font-bold px-6 py-2.5 rounded-lg text-sm transition-all shadow-md active:scale-97"
           >
             {t('myTrips.registerBtn')}
           </button>
@@ -73,7 +73,7 @@ export default function MyTrips() {
         </div>
         <button
           onClick={() => navigate('/')}
-          className="bg-amber-500 hover:bg-amber-650 text-white text-sm font-bold px-5 py-2.5 rounded-lg transition-all shadow-sm active:scale-97"
+          className="bg-red-500 hover:bg-red-650 text-white text-sm font-bold px-5 py-2.5 rounded-lg transition-all shadow-sm active:scale-97"
         >
           {t('myTrips.bookNewTrip')}
         </button>
@@ -97,7 +97,7 @@ export default function MyTrips() {
                 
                 {/* Left: Bus Icon in Dark container */}
                 <div className="flex items-center gap-4 flex-grow">
-                  <div className="w-12 h-12 bg-neutral-900 rounded-xl flex items-center justify-center text-amber-500 flex-shrink-0">
+                  <div className="w-12 h-12 bg-neutral-900 rounded-xl flex items-center justify-center text-red-500 flex-shrink-0">
                     <Bus className="w-6 h-6" />
                   </div>
 
@@ -110,7 +110,7 @@ export default function MyTrips() {
                           ? 'bg-red-50 text-red-600 border-red-200'
                           : booking.paymentStatus?.toLowerCase() === 'paid'
                             ? 'bg-green-50 text-green-700 border-green-200'
-                            : 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-red-50 text-red-700 border-red-200'
                       }`}>
                         {booking.checkInStatus || 'Confirmed'}
                       </span>
@@ -176,7 +176,7 @@ export default function MyTrips() {
             <p>{t('myTrips.noTrips')}</p>
             <button
               onClick={() => navigate('/')}
-              className="mt-3 text-amber-500 hover:text-amber-600 font-bold text-xs"
+              className="mt-3 text-red-500 hover:text-red-600 font-bold text-xs"
             >
               {t('myTrips.startBooking')} &rarr;
             </button>
