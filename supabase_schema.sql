@@ -196,7 +196,7 @@ create policy "Admin only manage schedules"
   using (public.is_admin()) 
   with check (public.is_admin());
 
--- 4. Bookings Policies: Public can create, Passengers view own, Admins manage all
+-- 4. Bookings Policies: Public can create, Owners & Admins view/update
 drop policy if exists "Allow users to read and manage bookings" on public.bookings;
 drop policy if exists "Allow all access to bookings" on public.bookings;
 drop policy if exists "Allow public to create bookings" on public.bookings;
@@ -210,15 +210,31 @@ create policy "Allow users and admins to view bookings"
   on public.bookings for select 
   using (
     public.is_admin() 
-    or auth.uid() = user_id 
-    or passenger_email = (auth.jwt() ->> 'email')
-    or user_id is null
+    or (auth.uid() is not null and auth.uid() = user_id) 
+    or (auth.jwt() ->> 'email' is not null and lower(passenger_email) = lower(auth.jwt() ->> 'email'))
   );
 
-create policy "Allow admins to manage all bookings" 
+create policy "Allow admins and owners to update bookings" 
   on public.bookings for update 
-  using (public.is_admin() or auth.uid() = user_id)
-  with check (public.is_admin() or auth.uid() = user_id);
+  using (public.is_admin() or (auth.uid() is not null and auth.uid() = user_id))
+  with check (public.is_admin() or (auth.uid() is not null and auth.uid() = user_id));
+
+-- 4.1 Secure RPC for unauthenticated guest passenger ticket verification (requires Booking ID + phone or email)
+create or replace function public.lookup_guest_booking(
+  p_booking_id text,
+  p_identifier text
+)
+returns setof public.bookings as $$
+begin
+  return query
+  select * from public.bookings
+  where id = trim(p_booking_id)
+    and (
+      lower(passenger_email) = lower(trim(p_identifier))
+      or replace(replace(phone, ' ', ''), '-', '') = replace(replace(trim(p_identifier), ' ', ''), '-', '')
+    );
+end;
+$$ language plpgsql security definer;
 
 -- 5. Profiles Policies: Users manage own profile, Admins view all
 drop policy if exists "Allow users to read and update their own profile" on public.profiles;

@@ -180,10 +180,13 @@ export default function Book() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            amount: '25',
+            amount: String(totalAmount),
             currency: 'XAF',
             from: phone,
-            description: `TransitFlow Booking ${schedule.id}`,
+            schedule_id: schedule.id,
+            seats: selectedSeats,
+            travel_class: serviceClass,
+            description: `Afrique Con Booking ${schedule.id}`,
             external_reference: 'bk-' + Math.floor(1000 + Math.random() * 9000)
           })
         });

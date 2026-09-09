@@ -40,6 +40,23 @@ export default async function handler(req, res) {
     });
   }
 
+  // Security: Verify Webhook Secret if BOTPENGUIN_WEBHOOK_SECRET is configured
+  const webhookSecret = process.env.BOTPENGUIN_WEBHOOK_SECRET;
+  if (webhookSecret) {
+    const providedSecret = 
+      req.headers['x-botpenguin-secret'] || 
+      req.headers['x-webhook-secret'] || 
+      req.headers['authorization']?.replace(/^Bearer\s+/i, '') || 
+      req.query?.secret;
+    
+    if (providedSecret !== webhookSecret) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized: Invalid or missing webhook authentication secret.'
+      });
+    }
+  }
+
   try {
     const payload = req.method === 'GET' ? req.query : (req.body || {});
     const action = payload.action || 'create_booking';

@@ -10,25 +10,14 @@ export const ADMIN_EMAILS = ['nkengsteadbeks@gmail.com', 'admin@transitflow.com'
 export const isAdminEmail = (email) => {
   if (!email) return false;
   const normalized = email.trim().toLowerCase();
-  return ADMIN_EMAILS.includes(normalized) || normalized.includes('admin');
+  return ADMIN_EMAILS.includes(normalized);
 };
 
 export const isUUID = (str) => typeof str === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 
 export const getLocalUsers = () => {
   try {
-    const users = JSON.parse(localStorage.getItem(LOCAL_USERS_KEY) || '[]');
-    if (!users.some(u => u.email === 'nkengsteadbeks@gmail.com')) {
-      users.push({
-        id: 'local-admin-1',
-        email: 'nkengsteadbeks@gmail.com',
-        name: 'Steady Beks (Admin)',
-        password: 'Sergeant.1#',
-        role: 'admin'
-      });
-      localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(users));
-    }
-    return users;
+    return JSON.parse(localStorage.getItem(LOCAL_USERS_KEY) || '[]');
   } catch {
     return [];
   }
