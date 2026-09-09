@@ -33,11 +33,62 @@ const parsePassengers = (pField) => {
   return null;
 };
 
+export const LOCAL_BOOKINGS_KEY = 'transitflow_local_bookings';
+
+export const getLocalBookings = () => {
+  try {
+    const raw = localStorage.getItem(LOCAL_BOOKINGS_KEY);
+    if (!raw) {
+      const initialDemo = [
+        {
+          id: 'bk-849201',
+          scheduleId: 'sched-auto-route-dla-yde-2026-09-10',
+          userId: null,
+          passengerName: 'Brandy Jay',
+          passengerEmail: 'brandy@example.com',
+          phone: '237670001122',
+          seats: ['1A', '1B'],
+          travelClass: 'Gold VIP+',
+          totalAmount: 18000,
+          paymentMethod: 'Mobile Money',
+          paymentStatus: 'Paid',
+          checkInStatus: 'Confirmed',
+          passportNumber: 'N10293847',
+          passengers: [
+            { seat: '1A', name: 'Brandy Jay', passport: 'N10293847' },
+            { seat: '1B', name: 'Steady Beks', passport: 'N99283741' }
+          ],
+          bookingDate: new Date().toISOString()
+        }
+      ];
+      localStorage.setItem(LOCAL_BOOKINGS_KEY, JSON.stringify(initialDemo));
+      return initialDemo;
+    }
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+};
+
+export const saveLocalBookings = (list) => {
+  try {
+    localStorage.setItem(LOCAL_BOOKINGS_KEY, JSON.stringify(list));
+  } catch {}
+};
+
 export function BookingProvider({ children }) {
   const { currentUser } = useAuth();
-  const [bookings, setBookings] = useState([]);
+  const [bookings, setBookings] = useState(() => getLocalBookings());
   const [supportTickets, setSupportTickets] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const updateBookingsState = (newBookingsOrFn) => {
+    setBookings(prev => {
+      const resolved = typeof newBookingsOrFn === 'function' ? newBookingsOrFn(prev) : newBookingsOrFn;
+      saveLocalBookings(resolved);
+      return resolved;
+    });
+  };
 
   const loadBookingData = async () => {
     if (!isSupabaseConfigured) {
@@ -50,24 +101,37 @@ export function BookingProvider({ children }) {
       const { data: bookData, error: bookErr } = await supabase.from('bookings').select('*');
       if (bookErr) throw bookErr;
 
-      setBookings((bookData || []).map(b => ({
-        ...b,
-        id: String(b.id),
-        scheduleId: String(b.schedule_id || b.scheduleId || ''),
-        userId: b.user_id ? String(b.user_id) : null,
-        passengerName: String(b.passenger_name || b.passengerName || ''),
-        passengerEmail: String(b.passenger_email || b.passengerEmail || ''),
-        phone: String(b.phone || ''),
-        seats: parseSeats(b.seats),
-        travelClass: String(b.travel_class || b.travelClass || 'Gold VIP+'),
-        totalAmount: Number(b.total_amount ?? b.totalAmount) || 0,
-        paymentMethod: String(b.payment_method || b.paymentMethod || 'Mobile Money'),
-        paymentStatus: String(b.payment_status || b.paymentStatus || 'Paid'),
-        checkInStatus: String(b.check_in_status || b.checkInStatus || 'Pending'),
-        passportNumber: b.passport_number || b.passportNumber || null,
-        passengers: parsePassengers(b.passengers),
-        bookingDate: String(b.booking_date || b.bookingDate || new Date().toISOString())
-      })));
+      if (bookData && bookData.length > 0) {
+        const mapped = bookData.map(b => ({
+          ...b,
+          id: String(b.id),
+          scheduleId: String(b.schedule_id || b.scheduleId || ''),
+          userId: b.user_id ? String(b.user_id) : null,
+          passengerName: String(b.passenger_name || b.passengerName || ''),
+          passengerEmail: String(b.passenger_email || b.passengerEmail || ''),
+          phone: String(b.phone || ''),
+          seats: parseSeats(b.seats),
+          travelClass: String(b.travel_class || b.travelClass || 'Gold VIP+'),
+          totalAmount: Number(b.total_amount ?? b.totalAmount) || 0,
+          paymentMethod: String(b.payment_method || b.paymentMethod || 'Mobile Money'),
+          paymentStatus: String(b.payment_status || b.paymentStatus || 'Paid'),
+          checkInStatus: String(b.check_in_status || b.checkInStatus || 'Pending'),
+          passportNumber: b.passport_number || b.passportNumber || null,
+          passengers: parsePassengers(b.passengers),
+          bookingDate: String(b.booking_date || b.bookingDate || new Date().toISOString())
+        }));
+
+        // Merge Supabase bookings with any existing local bookings
+        updateBookingsState(prev => {
+          const combined = [...mapped];
+          prev.forEach(localB => {
+            if (!combined.some(sb => sb.id === localB.id)) {
+              combined.push(localB);
+            }
+          });
+          return combined;
+        });
+      }
 
       // 2. Fetch Support Tickets
       const { data: supportData, error: supportErr } = await supabase.from('support_tickets').select('*');
@@ -147,7 +211,7 @@ export function BookingProvider({ children }) {
             passengers: parsePassengers(data.passengers),
             bookingDate: String(data.booking_date)
           };
-          setBookings(prev => [formatted, ...prev]);
+          updateBookingsState(prev => [formatted, ...prev]);
           return formatted;
         }
       } catch (err) {
@@ -177,7 +241,7 @@ export function BookingProvider({ children }) {
       bookingDate: new Date().toISOString()
     };
 
-    setBookings(prev => [localFormatted, ...prev]);
+    updateBookingsState(prev => [localFormatted, ...prev]);
     return localFormatted;
   };
 

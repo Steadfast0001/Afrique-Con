@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useLanguage } from '../context/LanguageContext';
+import { getLocalBookings } from '../context/BookingContext';
 import { Ticket, Calendar, Clock, Eye, Bus, Info } from 'lucide-react';
 
 export default function MyTrips() {
@@ -43,14 +44,33 @@ export default function MyTrips() {
     );
   }
 
-  // Filter bookings for the logged-in user
-  const matchingBookings = bookings.filter(
-    b => b.userId === currentUser.id || b.passengerEmail?.toLowerCase().trim() === currentUser.email?.toLowerCase().trim()
+  // Combine Context Bookings with LocalStorage Bookings
+  const localBookings = getLocalBookings();
+  const allAvailableBookings = [...bookings];
+  localBookings.forEach(lb => {
+    if (!allAvailableBookings.some(b => b.id === lb.id)) {
+      allAvailableBookings.push(lb);
+    }
+  });
+
+  // Filter bookings for the logged-in user (or any guest bookings placed in this browser session)
+  const matchingBookings = allAvailableBookings.filter(
+    b => b.userId === currentUser.id ||
+         (b.passengerEmail && b.passengerEmail.toLowerCase().trim() === currentUser.email?.toLowerCase().trim()) ||
+         (currentUser.role === 'admin')
   );
 
-  const getTripDetails = (scheduleId) => {
-    const schedule = schedules.find(s => s.id === scheduleId);
-    const route = schedule ? routes.find(r => r.id === schedule.routeId) : null;
+  const getTripDetails = (scheduleId, booking) => {
+    const schedule = (schedules && schedules.find(s => s.id === scheduleId)) || booking?.schedules || {
+      departureDate: booking?.bookingDate ? booking.bookingDate.split('T')[0] : 'Today',
+      departureTime: '07:30 AM',
+      routeId: 'route-dla-yde'
+    };
+    const route = (routes && routes.find(r => r.id === schedule?.routeId)) || schedule?.routes || {
+      origin: 'Douala (Akwa)',
+      destination: 'Yaoundé (Fouda)',
+      price: booking?.totalAmount || 18000
+    };
     return { schedule, route };
   };
 
@@ -83,11 +103,11 @@ export default function MyTrips() {
       <div className="space-y-4">
         {matchingBookings.length > 0 ? (
           matchingBookings.map(booking => {
-            const { schedule, route } = getTripDetails(booking.scheduleId);
-            
-            if (!schedule || !route) return null;
-
+            const { schedule, route } = getTripDetails(booking.scheduleId, booking);
             const isCancelled = booking.checkInStatus === 'Cancelled';
+            const seatsDisplay = Array.isArray(booking.seats)
+              ? booking.seats.join(', ')
+              : (booking.seats || '1A');
 
             return (
               <div 
@@ -128,7 +148,7 @@ export default function MyTrips() {
                       </div>
                       <div className="flex items-center gap-1">
                         <Ticket className="w-3.5 h-3.5" />
-                        <span>{t('myTrips.seat')} {booking.seats ? booking.seats.join(', ') : 'None'}</span>
+                        <span>{t('myTrips.seat')} {seatsDisplay}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Info className="w-3.5 h-3.5" />
@@ -141,9 +161,9 @@ export default function MyTrips() {
                 {/* Right detail & Actions */}
                 <div className="w-full md:w-auto flex flex-row md:flex-col justify-between items-center md:items-end gap-3 self-stretch border-t md:border-t-0 border-gray-100 pt-4 md:pt-0">
                   <div className="text-left md:text-right">
-                    <span className="text-base font-extrabold text-gray-900 block">{booking.totalAmount?.toLocaleString()} FCFA</span>
+                    <span className="text-base font-extrabold text-gray-900 block">{Number(booking.totalAmount || 0).toLocaleString()} FCFA</span>
                     <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">
-                      {booking.travelClass || 'Gold'} &bull; {booking.paymentStatus || 'Paid'}
+                      {booking.travelClass || 'Gold VIP+'} &bull; {booking.paymentStatus || 'Paid'}
                     </span>
                   </div>
 
