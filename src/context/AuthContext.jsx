@@ -40,15 +40,33 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
-        const role = isAdminEmail(session.user.email) ? 'admin' : (session.user.user_metadata?.role || 'passenger');
-        setCurrentUser({
+        const email = session.user.email || '';
+        const rawName = session.user.user_metadata?.full_name || session.user.user_metadata?.name || email.split('@')[0];
+        const role = isAdminEmail(email) ? 'admin' : (session.user.user_metadata?.role || 'passenger');
+        const avatar = session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || null;
+        
+        let profileName = rawName;
+        try {
+          const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+          if (profile?.name) profileName = profile.name;
+        } catch (e) {}
+
+        const authUser = {
           id: session.user.id,
-          email: session.user.email,
-          name: session.user.user_metadata?.name || session.user.email.split('@')[0],
-          role
-        });
+          email,
+          name: profileName,
+          role,
+          avatar
+        };
+        setCurrentUser(authUser);
+        localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(authUser));
+      } else {
+        const savedSession = localStorage.getItem(LOCAL_SESSION_KEY);
+        if (savedSession) {
+          try { setCurrentUser(JSON.parse(savedSession)); } catch {}
+        }
       }
       setLoading(false);
     });
@@ -58,6 +76,7 @@ export function AuthProvider({ children }) {
         const email = session.user.email || '';
         const rawName = session.user.user_metadata?.full_name || session.user.user_metadata?.name || email.split('@')[0];
         const role = isAdminEmail(email) ? 'admin' : (session.user.user_metadata?.role || 'passenger');
+        const avatar = session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || null;
         
         let profileName = rawName;
         try {
@@ -70,23 +89,30 @@ export function AuthProvider({ children }) {
               id: session.user.id,
               name: rawName,
               email: email,
-              role: role
+              role: role,
+              avatar_url: avatar
             });
           }
         } catch (e) {
           console.warn('Profile sync warning:', e);
         }
 
-        setCurrentUser({
+        const authUser = {
           id: session.user.id,
           email: email,
           name: profileName,
-          role
-        });
+          role,
+          avatar
+        };
+        setCurrentUser(authUser);
+        localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(authUser));
+      } else if (event === 'SIGNED_OUT') {
+        localStorage.removeItem(LOCAL_SESSION_KEY);
+        setCurrentUser(null);
       } else {
         const savedSession = localStorage.getItem(LOCAL_SESSION_KEY);
         if (savedSession) {
-          setCurrentUser(JSON.parse(savedSession));
+          try { setCurrentUser(JSON.parse(savedSession)); } catch {}
         } else {
           setCurrentUser(null);
         }
@@ -217,8 +243,30 @@ export function AuthProvider({ children }) {
 
   const loginWithGoogle = async () => {
     if (!isSupabaseConfigured) {
-      return { success: false, message: 'Google sign-in requires Supabase to be configured.' };
+      // Offline / demo environment fallback: authenticate smoothly as demo Google user
+      const demoEmail = 'passenger.google@gmail.com';
+      const demoName = 'Google Passenger';
+      const localUser = {
+        id: `google-local-${Date.now()}`,
+        email: demoEmail,
+        name: demoName,
+        role: isAdminEmail(demoEmail) ? 'admin' : 'passenger',
+        provider: 'google'
+      };
+
+      const users = getLocalUsers();
+      const existingIndex = users.findIndex(u => u.email === demoEmail);
+      if (existingIndex >= 0) {
+        users[existingIndex] = { ...users[existingIndex], ...localUser };
+      } else {
+        users.push(localUser);
+      }
+      saveLocalUsers(users);
+      localStorage.setItem(LOCAL_SESSION_KEY, JSON.stringify(localUser));
+      setCurrentUser(localUser);
+      return { success: true, user: localUser };
     }
+
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -226,7 +274,7 @@ export function AuthProvider({ children }) {
           redirectTo: `${window.location.origin}/`,
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent'
+            prompt: 'select_account'
           }
         }
       });

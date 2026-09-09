@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useLanguage } from '../context/LanguageContext';
-import { LogIn, UserPlus, Mail, Lock, KeyRound, Eye, EyeOff } from 'lucide-react';
+import { LogIn, UserPlus, Mail, Lock, KeyRound, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { supabase } from '../context/supabaseClient';
 import ElectricBorder from '../components/ElectricBorder';
 
 export default function Auth({ mode = 'login' }) {
@@ -15,6 +16,8 @@ export default function Auth({ mode = 'login' }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Auto redirect when user logs in (e.g. via Google OAuth redirect or regular login)
   React.useEffect(() => {
@@ -30,49 +33,76 @@ export default function Auth({ mode = 'login' }) {
 
   const handleGoogleLogin = async () => {
     setError('');
-    const res = await loginWithGoogle();
-    if (!res.success) setError(res.message);
+    setIsGoogleLoading(true);
+    try {
+      const res = await loginWithGoogle();
+      if (!res.success) {
+        setError(res.message);
+        setIsGoogleLoading(false);
+      } else if (res.user) {
+        // Local/demo immediate resolution
+        navigate(res.user.role === 'admin' ? '/admin' : '/');
+      }
+    } catch (err) {
+      setError(err.message || 'Google sign-in error');
+      setIsGoogleLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
+    setIsSubmitting(true);
 
-    if (mode === 'login') {
-      const res = await loginUser(formData.email, formData.password);
-      if (res.success) {
-        // Wait briefly for Auth session handler to resolve currentUser
-        setTimeout(() => {
-          navigate('/');
-        }, 300);
-      } else {
-        setError(res.message);
+    try {
+      if (mode === 'login') {
+        const res = await loginUser(formData.email, formData.password);
+        if (res.success) {
+          // Wait briefly for Auth session handler to resolve currentUser
+          setTimeout(() => {
+            navigate(res?.user?.role === 'admin' ? '/admin' : '/');
+          }, 300);
+        } else {
+          setError(res.message);
+        }
+      } else if (mode === 'register') {
+        if (formData.password.length < 6) {
+          setIsSubmitting(false);
+          return setError(t('auth.passwordLengthErr'));
+        }
+        if (formData.password !== formData.confirmPassword) {
+          setIsSubmitting(false);
+          return setError(t('auth.passwordMatchErr'));
+        }
+        const derivedName = formData.email.split('@')[0].replace(/[^a-zA-Z]/g, ' ');
+        const capitalizedName = derivedName.charAt(0).toUpperCase() + derivedName.slice(1);
+        const res = await registerUser(capitalizedName, formData.email, formData.password);
+        if (res.success) {
+          setSuccess(language === 'fr' ? 'Inscription réussie ! Connexion...' : language === 'pcm' ? 'You done join us! Dey enter inside...' : 'Registration successful! Logging you in...');
+          const loginRes = await loginUser(formData.email, formData.password);
+          setTimeout(() => {
+            navigate(loginRes?.user?.role === 'admin' ? '/admin' : '/');
+          }, 500);
+        } else {
+          setError(res.message);
+        }
+      } else if (mode === 'forgot') {
+        if (!formData.email.trim()) {
+          setIsSubmitting(false);
+          return setError(language === 'fr' ? 'Veuillez entrer votre adresse e-mail.' : language === 'pcm' ? 'Write your email first.' : 'Please enter your email.');
+        }
+        const { error } = await supabase.auth.resetPasswordForEmail(formData.email);
+        if (error) {
+          setError(error.message);
+        } else {
+          setSuccess(t('auth.resetSent'));
+        }
       }
-    } else if (mode === 'register') {
-      if (formData.password.length < 6) return setError(t('auth.passwordLengthErr'));
-      if (formData.password !== formData.confirmPassword) return setError(t('auth.passwordMatchErr'));
-      const derivedName = formData.email.split('@')[0].replace(/[^a-zA-Z]/g, ' ');
-      const capitalizedName = derivedName.charAt(0).toUpperCase() + derivedName.slice(1);
-      const res = await registerUser(capitalizedName, formData.email, formData.password);
-      if (res.success) {
-        setSuccess(language === 'fr' ? 'Inscription réussie ! Connexion...' : language === 'pcm' ? 'You done join us! Dey enter inside...' : 'Registration successful! Logging you in...');
-        const loginRes = await loginUser(formData.email, formData.password);
-        setTimeout(() => {
-          navigate(loginRes?.user?.role === 'admin' ? '/admin' : '/');
-        }, 500);
-      } else {
-        setError(res.message);
-      }
-    } else if (mode === 'forgot') {
-      if (!formData.email.trim()) return setError(language === 'fr' ? 'Veuillez entrer votre adresse e-mail.' : language === 'pcm' ? 'Write your email first.' : 'Please enter your email.');
-      const { supabase } = await import('../context/supabaseClient');
-      const { error } = await supabase.auth.resetPasswordForEmail(formData.email);
-      if (error) {
-        setError(error.message);
-      } else {
-        setSuccess(t('auth.resetSent'));
-      }
+    } catch (err) {
+      setError(err.message || 'An unexpected error occurred.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -117,33 +147,45 @@ export default function Auth({ mode = 'login' }) {
           {/* Google Button */}
           <button
             type="button"
+            disabled={isGoogleLoading || isSubmitting}
             onClick={handleGoogleLogin}
-            className="w-full border border-gray-200 hover:bg-gray-50 text-gray-700 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center bg-white"
+            className="w-full border border-gray-200 hover:bg-gray-50 active:bg-gray-100 text-gray-700 py-2.5 px-4 rounded-xl text-sm font-semibold transition-all flex items-center justify-center bg-white shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
-            {/* Google Brand Logo */}
-            <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
-              <path
-                fill="#EA4335"
-                d="M12 5.04c1.66 0 3.2.57 4.38 1.69l3.27-3.27C17.67 1.48 15.02 1 12 1 7.35 1 3.4 3.65 1.5 7.5l3.87 3C6.3 7.8 8.94 5.04 12 5.04z"
-              />
-              <path
-                fill="#4285F4"
-                d="M23.49 12.27c0-.81-.07-1.59-.2-2.27H12v4.51h6.46c-.29 1.48-1.14 2.73-2.4 3.58l3.7 2.87c2.16-2 3.73-4.94 3.73-8.69z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M5.37 14.5c-.24-.73-.37-1.5-.37-2.3s.13-1.57.37-2.3L1.5 6.9C.54 8.82 0 10.97 0 13.2s.54 4.38 1.5 6.3l3.87-3z"
-              />
-              <path
-                fill="#34A853"
-                d="M12 23c3.24 0 5.97-1.07 7.96-2.91l-3.7-2.87c-1.03.69-2.35 1.11-4.26 1.11-3.06 0-5.7-2.76-6.63-5.46l-3.87 3C3.4 20.35 7.35 23 12 23z"
-              />
-            </svg>
-            <span>
-              {mode === 'register'
-                ? (language === 'fr' ? "S'inscrire avec Google" : language === 'pcm' ? 'Join with Google' : 'Sign up with Google')
-                : (language === 'fr' ? 'Continuer avec Google' : language === 'pcm' ? 'Enter with Google' : 'Continue with Google')}
-            </span>
+            {isGoogleLoading ? (
+              <div className="flex items-center justify-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-red-500" />
+                <span>
+                  {language === 'fr' ? 'Connexion à Google...' : language === 'pcm' ? 'Dey connect Google...' : 'Connecting to Google...'}
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center">
+                {/* Google Brand Logo */}
+                <svg className="w-4 h-4 mr-2.5 shrink-0" viewBox="0 0 24 24">
+                  <path
+                    fill="#EA4335"
+                    d="M12 5.04c1.66 0 3.2.57 4.38 1.69l3.27-3.27C17.67 1.48 15.02 1 12 1 7.35 1 3.4 3.65 1.5 7.5l3.87 3C6.3 7.8 8.94 5.04 12 5.04z"
+                  />
+                  <path
+                    fill="#4285F4"
+                    d="M23.49 12.27c0-.81-.07-1.59-.2-2.27H12v4.51h6.46c-.29 1.48-1.14 2.73-2.4 3.58l3.7 2.87c2.16-2 3.73-4.94 3.73-8.69z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.37 14.5c-.24-.73-.37-1.5-.37-2.3s.13-1.57.37-2.3L1.5 6.9C.54 8.82 0 10.97 0 13.2s.54 4.38 1.5 6.3l3.87-3z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 23c3.24 0 5.97-1.07 7.96-2.91l-3.7-2.87c-1.03.69-2.35 1.11-4.26 1.11-3.06 0-5.7-2.76-6.63-5.46l-3.87 3C3.4 20.35 7.35 23 12 23z"
+                  />
+                </svg>
+                <span>
+                  {mode === 'register'
+                    ? (language === 'fr' ? "S'inscrire avec Google" : language === 'pcm' ? 'Join with Google' : 'Sign up with Google')
+                    : (language === 'fr' ? 'Continuer avec Google' : language === 'pcm' ? 'Enter with Google' : 'Continue with Google')}
+                </span>
+              </div>
+            )}
           </button>
 
           {/* Divider */}
