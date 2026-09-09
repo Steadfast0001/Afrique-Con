@@ -132,7 +132,7 @@ export default function Ticket() {
       </div>
 
       {/* A4 PAGES CONTAINER */}
-      <div className="flex flex-col items-center gap-12 py-2">
+      <div className="printable-area flex flex-col items-center gap-12 py-2">
         {pages.map((pageSlips, pageIdx) => (
           <div
             key={pageIdx}

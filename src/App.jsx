@@ -24,11 +24,15 @@ import TransitBot from './components/TransitBot';
 function UserLayout() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 text-gray-900 overflow-x-hidden w-full max-w-full">
-      <Navbar />
+      <div className="no-print">
+        <Navbar />
+      </div>
       <main className="flex-1 overflow-x-hidden w-full max-w-full">
         <Outlet />
       </main>
-      <TransitBot />
+      <div className="no-print">
+        <TransitBot />
+      </div>
     </div>
   );
 }
