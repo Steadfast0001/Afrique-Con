@@ -76,9 +76,17 @@ export default function FleetManager() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Seats</label>
-              <input type="number" value={newBus.capacity} onChange={e => setNewBus(p => ({...p, capacity: e.target.value}))}
-                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400"/>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Seat Capacity</label>
+              <select 
+                value={newBus.capacity} 
+                onChange={e => setNewBus(p => ({...p, capacity: parseInt(e.target.value, 10)}))}
+                className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400 font-semibold"
+              >
+                <option value={70}>70 Seats (Long-Haul 2+2 Coach)</option>
+                <option value={50}>50 Seats (Executive 2+2 Coach)</option>
+                <option value={32}>32 Seats (Gold VIP+ 2+1 Recliner)</option>
+                <option value={18}>18 Seats (Express 1+2 Minibus)</option>
+              </select>
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Branch</label>

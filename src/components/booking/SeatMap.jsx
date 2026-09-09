@@ -73,11 +73,17 @@ export function SeatMap({
   basePrice = 6000,
   t
 }) {
-  // Determine active capacity configuration (defaults to busCapacity or closest match)
-  const initialCap = BUS_CONFIGURATIONS[busCapacity] ? busCapacity : 70;
-  const [activeCapacity, setActiveCapacity] = useState(initialCap);
+  // Automatically use the exact bus capacity assigned by the Admin
+  const activeCapacity = useMemo(() => {
+    const cap = Number(busCapacity);
+    if (BUS_CONFIGURATIONS[cap]) return cap;
+    if (cap >= 65) return 70;
+    if (cap >= 45) return 50;
+    if (cap >= 25) return 32;
+    return 18;
+  }, [busCapacity]);
+
   const [hoveredSeat, setHoveredSeat] = useState(null);
-  const [activeFilter, setActiveFilter] = useState('all'); // 'all', 'window', 'aisle', 'front'
 
   const currentConfig = BUS_CONFIGURATIONS[activeCapacity] || BUS_CONFIGURATIONS[70];
 
@@ -208,19 +214,22 @@ export function SeatMap({
   return (
     <div className="bg-white rounded-3xl p-4 sm:p-7 border border-gray-200 shadow-sm transition-all select-none">
       
-      {/* ===== 1. HEADER & CAPACITY SWITCHER ===== */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-gray-100">
+      {/* ===== 1. HEADER WITH ASSIGNED BUS INFO & CLASS ===== */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-5 border-b border-gray-100">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
             <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
-              {t ? t('book.selectSeats') : 'Interactive Bus Seat Map'}
+              {t ? t('book.selectSeats') : 'Select Your Seats'}
             </h2>
+            <span className="bg-red-50 text-red-600 border border-red-200 text-xs font-black px-2.5 py-0.5 rounded-full">
+              {currentConfig.id} SEATS
+            </span>
           </div>
           <p className="text-gray-500 text-xs sm:text-sm mt-0.5 flex items-center gap-2">
             <span>{busName}</span>
             <span className="text-gray-300">&bull;</span>
-            <span className="text-red-600 font-bold">{currentConfig.name}</span>
+            <span className="text-gray-600 font-semibold">{currentConfig.name}</span>
           </p>
         </div>
 
@@ -253,33 +262,6 @@ export function SeatMap({
             </button>
           </div>
         )}
-      </div>
-
-      {/* ===== 2. BUS CAPACITY CONFIGURATION SELECTOR ===== */}
-      <div className="py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-1.5 text-gray-500 font-bold">
-          <Bus className="w-4 h-4 text-red-500" />
-          <span>Select Capacity Layout:</span>
-        </div>
-
-        <div className="flex items-center gap-1.5 overflow-x-auto py-1">
-          {Object.values(BUS_CONFIGURATIONS).map((cfg) => (
-            <button
-              key={cfg.id}
-              type="button"
-              onClick={() => setActiveCapacity(cfg.id)}
-              className={`px-3 py-1.5 rounded-xl font-bold transition-all whitespace-nowrap text-xs flex items-center gap-1 ${
-                activeCapacity === cfg.id
-                  ? 'bg-red-500 text-white shadow-sm scale-105'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              <span>{cfg.id} Seater</span>
-              {cfg.id === 70 && <span className="bg-white/20 text-[10px] px-1 rounded">Standard</span>}
-              {cfg.id === 32 && <span className="bg-amber-300 text-amber-950 text-[9px] font-black px-1 rounded">VIP</span>}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* ===== 3. STATUS LEGEND & QUICK SHORTCUTS ===== */}
