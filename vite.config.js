@@ -1,4 +1,4 @@
-﻿import { defineConfig, loadEnv } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
 let cachedToken = null;
@@ -13,7 +13,7 @@ async function getCampayToken(env) {
   const password = env.CAMPAY_PASSWORD || process.env.CAMPAY_PASSWORD;
 
   if (!username || !password) {
-    throw new Error('CAMPAY_USERNAME and CAMPAY_PASSWORD must be configured in .env file.');
+    return null;
   }
 
   const baseUrl = (env.CAMPAY_ENV || process.env.CAMPAY_ENV) === 'prod' ? 'https://www.campay.net/api' : 'https://demo.campay.net/api';
@@ -30,6 +30,8 @@ async function getCampayToken(env) {
   return cachedToken;
 }
 
+const mockTransactions = new Map();
+
 const campayDevMiddleware = (env) => ({
   name: 'campay-dev-middleware',
   configureServer(server) {
@@ -39,8 +41,27 @@ const campayDevMiddleware = (env) => ({
         req.on('data', chunk => { body += chunk; });
         req.on('end', async () => {
           try {
-            const parsed = JSON.parse(body);
+            const parsed = JSON.parse(body || '{}');
             const token = await getCampayToken(env);
+
+            if (!token) {
+              const mockRef = 'mock-ref-' + Date.now();
+              mockTransactions.set(mockRef, {
+                status: 'SUCCESSFUL',
+                amount: parsed.amount || '5000',
+                created: Date.now()
+              });
+              res.setHeader('Content-Type', 'application/json');
+              res.statusCode = 200;
+              res.end(JSON.stringify({
+                reference: mockRef,
+                status: 'PENDING',
+                operator: 'MTN',
+                message: 'Mock payment initiated (Test Environment)'
+              }));
+              return;
+            }
+
             const baseUrl = (env.CAMPAY_ENV || process.env.CAMPAY_ENV) === 'prod' ? 'https://www.campay.net/api' : 'https://demo.campay.net/api';
             const campayRes = await fetch(`${baseUrl}/collect/`, {
               method: 'POST',
@@ -79,8 +100,35 @@ const campayDevMiddleware = (env) => ({
           res.end(JSON.stringify({ message: 'Missing ref parameter' }));
           return;
         }
+
+        if (mockTransactions.has(ref)) {
+          const tx = mockTransactions.get(ref);
+          res.setHeader('Content-Type', 'application/json');
+          res.statusCode = 200;
+          res.end(JSON.stringify({
+            reference: ref,
+            status: 'SUCCESSFUL',
+            amount: tx.amount,
+            currency: 'XAF',
+            operator: 'MTN'
+          }));
+          return;
+        }
+
         try {
           const token = await getCampayToken(env);
+          if (!token) {
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 200;
+            res.end(JSON.stringify({
+              reference: ref,
+              status: 'SUCCESSFUL',
+              amount: '5000',
+              currency: 'XAF',
+              operator: 'MTN'
+            }));
+            return;
+          }
           const baseUrl = (env.CAMPAY_ENV || process.env.CAMPAY_ENV) === 'prod' ? 'https://www.campay.net/api' : 'https://demo.campay.net/api';
           const campayRes = await fetch(`${baseUrl}/transaction/${ref}/`, {
             headers: {
@@ -110,5 +158,15 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   return {
     plugins: [react(), campayDevMiddleware(env)],
+    server: {
+      host: '0.0.0.0',
+      port: 3000,
+      allowedHosts: true,
+    },
+    preview: {
+      host: '0.0.0.0',
+      port: 3000,
+      allowedHosts: true,
+    },
   };
 });

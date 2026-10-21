@@ -3,23 +3,19 @@ import { useApp } from '../../context/AppContext';
 import { 
   Printer, 
   FileText, 
-  Bus as BusIcon, 
-  MapPin, 
   Calendar, 
-  Clock, 
-  ShieldCheck, 
-  Users, 
   Download, 
   Search,
-  CheckCircle,
   FileCheck,
-  Building
+  LayoutGrid
 } from 'lucide-react';
+import { ManifestSeatSelector } from '../../components/manifest/ManifestSeatSelector';
 
 export default function Manifests() {
-  const { schedules, routes, buses, bookings } = useApp();
+  const { schedules, routes, buses, bookings, addBooking, cancelBooking } = useApp();
   const [selectedScheduleId, setSelectedScheduleId] = useState(null);
   const [searchFilter, setSearchFilter] = useState('');
+  const [activeTab, setActiveTab] = useState('seatMap'); // 'seatMap' | 'table'
 
   // Default to first schedule if none selected
   const activeScheduleId = selectedScheduleId || (schedules.length > 0 ? schedules[0].id : null);
@@ -98,6 +94,45 @@ export default function Manifests() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleReserveWalkIn = async (data) => {
+    if (!selectedSchedule) return;
+    try {
+      await addBooking({
+        scheduleId: selectedSchedule.id,
+        passengerName: data.name,
+        passengerEmail: `${data.phone || 'walkin'}@terminal.afriquecon.com`,
+        phone: data.phone || '237670000000',
+        seats: [data.seatId],
+        totalAmount: selectedRoute?.price || 6000,
+        paymentMethod: 'Cash (Terminal Counter)',
+        paymentStatus: 'Paid',
+        checkInStatus: 'Checked-In',
+        passportNumber: data.passport || '',
+        travelClass: 'Standard',
+        passengers: [{
+          seat: data.seatId,
+          name: data.name,
+          passport: data.passport || ''
+        }]
+      });
+    } catch (err) {
+      console.error('Failed to save walk-in reservation:', err);
+    }
+  };
+
+  const handleSeatStateChange = async (seatId, newState) => {
+    if (newState === 'available' && activeScheduleId) {
+      const existing = bookings.find(b => 
+        b.scheduleId === activeScheduleId && 
+        b.checkInStatus !== 'Cancelled' &&
+        (Array.isArray(b.seats) ? b.seats.includes(seatId) : b.seats === seatId)
+      );
+      if (existing && cancelBooking) {
+        await cancelBooking(existing.id);
+      }
+    }
   };
 
   const filteredSchedules = schedules.filter(s => {
@@ -222,144 +257,201 @@ export default function Manifests() {
           </div>
         </div>
 
-        {/* Right Col: Official Manifest Document (Visible on Screen AND 100% Isolated for @media print) */}
-        <div className="lg:col-span-8">
+        {/* Right Col: Interactive Manifest & Official Document */}
+        <div className="lg:col-span-8 space-y-4">
           
-          <div className="printable-area bg-white border border-gray-200 rounded-3xl p-6 sm:p-8 shadow-sm">
-            
-            {/* Manifest Official Branding & Header */}
-            <div className="border-b-2 border-gray-900 pb-4 mb-5">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-red-600 text-white rounded-2xl flex items-center justify-center font-black text-xl flex-shrink-0">
-                    AC
-                  </div>
-                  <div>
-                    <h1 className="text-lg sm:text-xl font-black text-gray-950 uppercase tracking-tight">
-                      AFRIQUE CON EXPRESS &bull; TRIP PASSENGER MANIFEST
-                    </h1>
-                    <p className="text-xs text-gray-500 font-medium tracking-wide">
-                      CEMAC & ECOWAS INTER-STATE CROSS-BORDER TRANSIT PERMIT & MANIFEST REGISTRATION
-                    </p>
-                  </div>
-                </div>
+          {/* View Tab Switcher (Screen Only) */}
+          <div className="flex items-center justify-between gap-3 p-1.5 bg-gray-100 rounded-2xl border border-gray-200 no-print">
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setActiveTab('seatMap')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                  activeTab === 'seatMap'
+                    ? 'bg-red-500 text-white shadow-xs'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span>Interactive Bus Seat Manifest</span>
+              </button>
 
-                <div className="text-right flex-shrink-0">
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider block">DOCUMENT REF:</span>
-                  <span className="font-mono font-black text-xs text-red-600 block">MAN-{selectedSchedule?.id || 'AUTO'}</span>
-                  <span className="text-[9px] text-gray-400 font-mono block">PRINTED: {new Date().toLocaleDateString()}</span>
-                </div>
-              </div>
-
-              {/* Trip & Coach Metadata Box */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-3 border-t border-gray-200 text-xs">
-                <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-200/70">
-                  <span className="text-[9px] font-black text-gray-400 uppercase block">CORRIDOR ROUTE</span>
-                  <span className="font-black text-gray-900 text-xs block truncate">
-                    {selectedRoute ? `${selectedRoute.origin} ➔ ${selectedRoute.destination}` : 'Direct Service'}
-                  </span>
-                </div>
-
-                <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-200/70">
-                  <span className="text-[9px] font-black text-gray-400 uppercase block">DEPARTURE DATE & TIME</span>
-                  <span className="font-bold text-gray-900 text-xs block">
-                    {selectedSchedule?.departureDate} &bull; <strong className="text-red-600">{selectedSchedule?.departureTime}</strong>
-                  </span>
-                </div>
-
-                <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-200/70">
-                  <span className="text-[9px] font-black text-gray-400 uppercase block">ASSIGNED COACH / VEHICLE</span>
-                  <span className="font-black text-gray-900 text-xs block">
-                    {selectedBus?.plate || 'LT-8891-A'} ({selectedBus?.capacity || 70} Seats)
-                  </span>
-                </div>
-
-                <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-200/70">
-                  <span className="text-[9px] font-black text-gray-400 uppercase block">PASSENGERS ONBOARD</span>
-                  <span className="font-black text-red-600 text-xs block">
-                    {manifestPassengers.length} Total Checked ({selectedBus?.capacity ? `${Math.round((manifestPassengers.length / selectedBus.capacity) * 100)}% Load` : 'Active'})
-                  </span>
-                </div>
-              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab('table')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                  activeTab === 'table'
+                    ? 'bg-red-500 text-white shadow-xs'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Official Paper Sheet (A4)</span>
+              </button>
             </div>
 
-            {/* Passenger Manifest Table */}
-            {manifestPassengers.length === 0 ? (
-              <div className="text-center py-16 text-gray-400 text-sm">
-                No active bookings recorded for this scheduled trip yet.
+            <div className="hidden sm:flex items-center gap-2 pr-2 text-xs font-semibold text-gray-500">
+              <span className="text-gray-900 font-bold">{manifestPassengers.length}</span> Pax Checked In
+              <span>&bull;</span>
+              <span>Coach {selectedBus?.plate || 'LT-8891-A'}</span>
+            </div>
+          </div>
+
+          {/* Tab 1: Interactive Seat Manifest Component */}
+          {activeTab === 'seatMap' && (
+            <div className="no-print animate-fade-in">
+              <ManifestSeatSelector
+                key={`seat-manifest-${activeScheduleId}`}
+                busCapacity={selectedBus?.capacity || 70}
+                busName={selectedBus?.name || 'Afrique Con Cruiser'}
+                busPlate={selectedBus?.plate || 'LT-8891-A'}
+                scheduleInfo={selectedSchedule}
+                routeInfo={selectedRoute}
+                initialBookings={rawManifestBookings}
+                onSeatStateChange={handleSeatStateChange}
+                onReserveWalkIn={handleReserveWalkIn}
+              />
+            </div>
+          )}
+
+          {/* Tab 2 / Print: Official A4 Manifest Document */}
+          <div className={activeTab === 'table' ? 'block animate-fade-in' : 'hidden print:block'}>
+            <div className="printable-area bg-white border border-gray-200 rounded-3xl p-6 sm:p-8 shadow-sm">
+              
+              {/* Manifest Official Branding & Header */}
+              <div className="border-b-2 border-gray-900 pb-4 mb-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-red-600 text-white rounded-2xl flex items-center justify-center font-black text-xl flex-shrink-0">
+                      AC
+                    </div>
+                    <div>
+                      <h1 className="text-lg sm:text-xl font-black text-gray-950 uppercase tracking-tight">
+                        AFRIQUE CON EXPRESS &bull; TRIP PASSENGER MANIFEST
+                      </h1>
+                      <p className="text-xs text-gray-500 font-medium tracking-wide">
+                        CEMAC & ECOWAS INTER-STATE CROSS-BORDER TRANSIT PERMIT & MANIFEST REGISTRATION
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="text-right flex-shrink-0">
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider block">DOCUMENT REF:</span>
+                    <span className="font-mono font-black text-xs text-red-600 block">MAN-{selectedSchedule?.id || 'AUTO'}</span>
+                    <span className="text-[9px] text-gray-400 font-mono block">PRINTED: {new Date().toLocaleDateString()}</span>
+                  </div>
+                </div>
+
+                {/* Trip & Coach Metadata Box */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-3 border-t border-gray-200 text-xs">
+                  <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-200/70">
+                    <span className="text-[9px] font-black text-gray-400 uppercase block">CORRIDOR ROUTE</span>
+                    <span className="font-black text-gray-900 text-xs block truncate">
+                      {selectedRoute ? `${selectedRoute.origin} ➔ ${selectedRoute.destination}` : 'Direct Service'}
+                    </span>
+                  </div>
+
+                  <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-200/70">
+                    <span className="text-[9px] font-black text-gray-400 uppercase block">DEPARTURE DATE & TIME</span>
+                    <span className="font-bold text-gray-900 text-xs block">
+                      {selectedSchedule?.departureDate} &bull; <strong className="text-red-600">{selectedSchedule?.departureTime}</strong>
+                    </span>
+                  </div>
+
+                  <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-200/70">
+                    <span className="text-[9px] font-black text-gray-400 uppercase block">ASSIGNED COACH / VEHICLE</span>
+                    <span className="font-black text-gray-900 text-xs block">
+                      {selectedBus?.plate || 'LT-8891-A'} ({selectedBus?.capacity || 70} Seats)
+                    </span>
+                  </div>
+
+                  <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-200/70">
+                    <span className="text-[9px] font-black text-gray-400 uppercase block">PASSENGERS ONBOARD</span>
+                    <span className="font-black text-red-600 text-xs block">
+                      {manifestPassengers.length} Total Checked ({selectedBus?.capacity ? `${Math.round((manifestPassengers.length / selectedBus.capacity) * 100)}% Load` : 'Active'})
+                    </span>
+                  </div>
+                </div>
               </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs text-left border-collapse">
-                  <thead>
-                    <tr className="border-b-2 border-gray-300 text-[10px] font-black text-gray-600 uppercase tracking-wider bg-gray-100/80">
-                      <th className="py-2.5 px-3 w-8 text-center">#</th>
-                      <th className="py-2.5 px-3 w-14">Seat</th>
-                      <th className="py-2.5 px-3">Passenger Full Name</th>
-                      <th className="py-2.5 px-3">Passport / National ID</th>
-                      <th className="py-2.5 px-3">Contact Phone</th>
-                      <th className="py-2.5 px-3">Class</th>
-                      <th className="py-2.5 px-3">Ref ID</th>
-                      <th className="py-2.5 px-3 text-right">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 text-gray-800">
-                    {manifestPassengers.map((p, idx) => (
-                      <tr key={p.id} className="hover:bg-gray-50/50">
-                        <td className="py-2 px-3 text-center text-gray-400 font-bold">{idx + 1}</td>
-                        <td className="py-2 px-3 font-mono font-black text-red-600">{p.seatNumber}</td>
-                        <td className="py-2 px-3 font-bold text-gray-950 capitalize">{p.passengerName}</td>
-                        <td className="py-2 px-3 font-mono text-gray-700">{p.passportNumber || 'Cameroon CNI'}</td>
-                        <td className="py-2 px-3 text-gray-600 font-mono">{p.phone}</td>
-                        <td className="py-2 px-3 text-gray-700 font-semibold">{p.travelClass}</td>
-                        <td className="py-2 px-3 font-mono text-[10px] text-gray-500">{p.bookingRef}</td>
-                        <td className="py-2 px-3 text-right">
-                          <span className="font-bold text-emerald-700 text-[10px] uppercase">
-                            ✓ {p.checkInStatus || 'Confirmed'}
-                          </span>
-                        </td>
+
+              {/* Passenger Manifest Table */}
+              {manifestPassengers.length === 0 ? (
+                <div className="text-center py-16 text-gray-400 text-sm">
+                  No active bookings recorded for this scheduled trip yet.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left border-collapse">
+                    <thead>
+                      <tr className="border-b-2 border-gray-300 text-[10px] font-black text-gray-600 uppercase tracking-wider bg-gray-100/80">
+                        <th className="py-2.5 px-3 w-8 text-center">#</th>
+                        <th className="py-2.5 px-3 w-14">Seat</th>
+                        <th className="py-2.5 px-3">Passenger Full Name</th>
+                        <th className="py-2.5 px-3">Passport / National ID</th>
+                        <th className="py-2.5 px-3">Contact Phone</th>
+                        <th className="py-2.5 px-3">Class</th>
+                        <th className="py-2.5 px-3">Ref ID</th>
+                        <th className="py-2.5 px-3 text-right">Status</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 text-gray-800">
+                      {manifestPassengers.map((p, idx) => (
+                        <tr key={p.id} className="hover:bg-gray-50/50">
+                          <td className="py-2 px-3 text-center text-gray-400 font-bold">{idx + 1}</td>
+                          <td className="py-2 px-3 font-mono font-black text-red-600">{p.seatNumber}</td>
+                          <td className="py-2 px-3 font-bold text-gray-950 capitalize">{p.passengerName}</td>
+                          <td className="py-2 px-3 font-mono text-gray-700">{p.passportNumber || 'Cameroon CNI'}</td>
+                          <td className="py-2 px-3 text-gray-600 font-mono">{p.phone}</td>
+                          <td className="py-2 px-3 text-gray-700 font-semibold">{p.travelClass}</td>
+                          <td className="py-2 px-3 font-mono text-[10px] text-gray-500">{p.bookingRef}</td>
+                          <td className="py-2 px-3 text-right">
+                            <span className="font-bold text-emerald-700 text-[10px] uppercase">
+                              ✓ {p.checkInStatus || 'Confirmed'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
-            {/* Official Border Control & Conductor Sign-off Section */}
-            <div className="mt-8 pt-6 border-t-2 border-gray-300 grid grid-cols-3 gap-6 text-xs">
-              <div className="border border-dashed border-gray-300 rounded-xl p-3 h-28 flex flex-col justify-between">
-                <span className="text-[10px] font-black text-gray-400 uppercase">1. BUS DRIVER / CONDUCTOR</span>
-                <div className="border-b border-gray-400 w-full mb-1"></div>
-                <div className="flex justify-between text-[9px] text-gray-400">
-                  <span>Signature & Date</span>
-                  <span>Afrique Con Staff</span>
+              {/* Official Border Control & Conductor Sign-off Section */}
+              <div className="mt-8 pt-6 border-t-2 border-gray-300 grid grid-cols-3 gap-6 text-xs">
+                <div className="border border-dashed border-gray-300 rounded-xl p-3 h-28 flex flex-col justify-between">
+                  <span className="text-[10px] font-black text-gray-400 uppercase">1. BUS DRIVER / CONDUCTOR</span>
+                  <div className="border-b border-gray-400 w-full mb-1"></div>
+                  <div className="flex justify-between text-[9px] text-gray-400">
+                    <span>Signature & Date</span>
+                    <span>Afrique Con Staff</span>
+                  </div>
+                </div>
+
+                <div className="border border-dashed border-gray-300 rounded-xl p-3 h-28 flex flex-col justify-between">
+                  <span className="text-[10px] font-black text-gray-400 uppercase">2. TERMINAL DISPATCH MASTER</span>
+                  <div className="border-b border-gray-400 w-full mb-1"></div>
+                  <div className="flex justify-between text-[9px] text-gray-400">
+                    <span>Stamp & Clearance</span>
+                    <span>Akwa / Fouda Hub</span>
+                  </div>
+                </div>
+
+                <div className="border border-dashed border-gray-300 rounded-xl p-3 h-28 flex flex-col justify-between">
+                  <span className="text-[10px] font-black text-gray-400 uppercase">3. BORDER IMMIGRATION POLICE</span>
+                  <div className="border-b border-gray-400 w-full mb-1"></div>
+                  <div className="flex justify-between text-[9px] text-gray-400">
+                    <span>Official Entry/Exit Stamp</span>
+                    <span>Border Post</span>
+                  </div>
                 </div>
               </div>
 
-              <div className="border border-dashed border-gray-300 rounded-xl p-3 h-28 flex flex-col justify-between">
-                <span className="text-[10px] font-black text-gray-400 uppercase">2. TERMINAL DISPATCH MASTER</span>
-                <div className="border-b border-gray-400 w-full mb-1"></div>
-                <div className="flex justify-between text-[9px] text-gray-400">
-                  <span>Stamp & Clearance</span>
-                  <span>Akwa / Fouda Hub</span>
-                </div>
+              {/* Print Footer Note */}
+              <div className="mt-4 text-center text-[9px] text-gray-400 font-mono">
+                Afrique Con Transit & Logistics Network &bull; CEMAC Transport Protocol No. 849/2026 &bull; Page 1 of 1
               </div>
 
-              <div className="border border-dashed border-gray-300 rounded-xl p-3 h-28 flex flex-col justify-between">
-                <span className="text-[10px] font-black text-gray-400 uppercase">3. BORDER IMMIGRATION POLICE</span>
-                <div className="border-b border-gray-400 w-full mb-1"></div>
-                <div className="flex justify-between text-[9px] text-gray-400">
-                  <span>Official Entry/Exit Stamp</span>
-                  <span>Border Post</span>
-                </div>
-              </div>
             </div>
-
-            {/* Print Footer Note */}
-            <div className="mt-4 text-center text-[9px] text-gray-400 font-mono">
-              Afrique Con Transit & Logistics Network &bull; CEMAC Transport Protocol No. 849/2026 &bull; Page 1 of 1
-            </div>
-
           </div>
 
         </div>
